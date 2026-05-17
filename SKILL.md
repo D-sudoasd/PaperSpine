@@ -1,6 +1,6 @@
 ---
 name: paper-spine
-description: PaperSpine. Use when the user asks for motivation-driven academic paper writing, manuscript revision, literature-informed rewriting, journal/conference or paper-like task style imitation, paper structure diagnosis, native English polishing, LaTeX manuscript integration, or formatting/compiling a research paper or report. Especially useful when the user provides a draft, target venue/task type, reference papers, PDFs, BibTeX files, rubrics, exemplars, or a LaTeX project and wants the work to learn from strong examples without fabricating data.
+description: Motivation-driven academic paper/report writing: target-venue research, exemplar learning, logic-first rewriting, LaTeX integration, and audits without fabricating claims.
 ---
 
 # PaperSpine

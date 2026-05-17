@@ -1,6 +1,6 @@
 # PaperSpine
 
-PaperSpine is a motivation-driven Codex skill for academic papers and paper-like writing tasks. It is designed as a research-writing learning system rather than a prose polisher: it first studies the target venue or task genre, learns from strong exemplars, confirms the controlling motivation, builds section-level blueprints, and only then rewrites or integrates the manuscript.
+PaperSpine is a motivation-driven `SKILL.md` package for academic papers and paper-like writing tasks. It can be used with Codex-style skill folders and Claude Code skill folders. It is designed as a research-writing learning system rather than a prose polisher: it first studies the target venue or task genre, learns from strong exemplars, confirms the controlling motivation, builds section-level blueprints, and only then rewrites or integrates the manuscript.
 
 In short: PaperSpine helps a manuscript grow around its central spine: motivation, evidence, section logic, and revision accountability.
 
@@ -16,16 +16,64 @@ In short: PaperSpine helps a manuscript grow around its central spine: motivatio
 
 ## Install
 
-Clone or copy this folder into your Codex skills directory:
+Install the whole folder, not only `SKILL.md`. PaperSpine uses `references/` and `scripts/` as part of the skill.
 
-```text
-$CODEX_HOME/skills/paper-spine
+### Codex
+
+Clone or copy this repository into your Codex skills directory as `paper-spine`:
+
+```bash
+git clone https://github.com/WUBING2023/PaperSpine.git "$CODEX_HOME/skills/paper-spine"
 ```
 
-Then invoke it by asking Codex to use `paper-spine` for a manuscript, report, or paper-like writing task.
+Then invoke it with `$paper-spine`:
 
 ```text
 Use $paper-spine to diagnose and rewrite my manuscript for a target journal.
+```
+
+### Claude Code
+
+For a personal skill available across projects, clone or copy this repository to:
+
+```text
+~/.claude/skills/paper-spine/SKILL.md
+```
+
+For a project-only skill, put it under the project:
+
+```text
+<project>/.claude/skills/paper-spine/SKILL.md
+```
+
+Example:
+
+```bash
+git clone https://github.com/WUBING2023/PaperSpine.git ~/.claude/skills/paper-spine
+```
+
+In Claude Code, the skill directory name becomes the slash command:
+
+```text
+/paper-spine
+```
+
+Claude Code may also invoke the skill automatically when your request matches the `description` in `SKILL.md`.
+
+### Claude.ai
+
+Zip the `paper-spine` folder itself, with `SKILL.md` directly inside that folder, then upload it through Claude's Skills settings. Keep the folder structure intact so `references/` and `scripts/` remain available.
+
+## Quick Start
+
+```text
+Use $paper-spine to diagnose and rewrite my manuscript for a target journal.
+```
+
+For Claude Code, use:
+
+```text
+/paper-spine
 ```
 
 ## Typical Workflow

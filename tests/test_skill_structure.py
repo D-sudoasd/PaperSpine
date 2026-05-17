@@ -30,7 +30,15 @@ class SkillStructureTests(unittest.TestCase):
 
     def test_no_obvious_local_private_paths_in_reusable_files(self) -> None:
         reusable_suffixes = {".md", ".py", ".yaml", ".yml", ".txt"}
-        blocked_fragments = ["C:" + "\\Users\\", "/Users/", "file:" + "///"]
+        blocked_fragments = [
+            "C:" + "\\Users\\",
+            "/Users/",
+            "file:" + "///",
+            "Bio" + "informatics",
+            "M:" + "\\" + "R" + "BP" + "\\",
+            "paper" + "_v",
+            "oup-" + "authoring",
+        ]
         offenders: list[str] = []
         for path in ROOT.rglob("*"):
             if not path.is_file() or path.suffix.lower() not in reusable_suffixes:
@@ -45,6 +53,13 @@ class SkillStructureTests(unittest.TestCase):
                     offenders.append(str(path.relative_to(ROOT)))
                     break
         self.assertEqual(offenders, [])
+
+    def test_frontmatter_description_is_portable(self) -> None:
+        text = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+        lines = text.splitlines()
+        description = next(line for line in lines if line.startswith("description: "))
+        value = description.removeprefix("description: ").strip()
+        self.assertLessEqual(len(value), 200)
 
 
 if __name__ == "__main__":
