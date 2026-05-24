@@ -23,6 +23,7 @@ UI_LANGUAGES = ("zh", "en")
 WORD_OUTPUTS = ("none", "docx")
 TRANSLATION_PACKAGES = ("none", "zh")
 REFERENCE_MODES = ("local_first", "specified_paths", "web")
+HUMANIZE_TIERS = ("none", "light", "medium", "heavy")
 GLOBAL_CONFIG_ENV = "PAPERSPINE_CONFIG_HOME"
 
 CHOICE_FIELDS = {
@@ -33,6 +34,7 @@ CHOICE_FIELDS = {
     "word_output": WORD_OUTPUTS,
     "translation_package": TRANSLATION_PACKAGES,
     "reference_mode": REFERENCE_MODES,
+    "humanize_tier": HUMANIZE_TIERS,
     "ui_language": UI_LANGUAGES,
 }
 
@@ -52,6 +54,7 @@ FIELD_ORDER = (
     "reference_paths",
     "citation_target_count",
     "special_requirements",
+    "humanize_tier",
     "ui_language",
 )
 
@@ -91,6 +94,12 @@ CHOICE_HELP = {
         "zh": ("中文界面", "Chinese interface"),
         "en": ("English UI", "English interface"),
     },
+    "humanize_tier": {
+        "none": ("不降 AI 痕迹", "No humanization"),
+        "light": ("轻度 — 替换连接词，微调句式", "Light — replace connectors, vary sentence length"),
+        "medium": ("中度 — 句式打散 + 信息密度 + 第一人称", "Medium — break patterns + density + first-person"),
+        "heavy": ("强度 — 不完美注入 + 结构多变 + 低频词汇", "Heavy — imperfections + varied structure + rare terms"),
+    },
 }
 
 LABELS = {
@@ -110,6 +119,7 @@ LABELS = {
         "word_output": "Word 版本",
         "translation_package": "生成英文产物后是否翻译",
         "ui_language": "界面语言",
+        "humanize_tier": "降 AI 痕迹",
         "target_name": "目标名称",
         "draft_path": "初稿路径",
         "materials_dir": "素材文件夹路径",
@@ -159,6 +169,7 @@ LABELS = {
         "word_output": "Word output",
         "translation_package": "Translate after English output",
         "ui_language": "UI language",
+        "humanize_tier": "AI humanization",
         "target_name": "Target name",
         "draft_path": "Draft path",
         "materials_dir": "Materials directory",
@@ -212,6 +223,7 @@ class PaperSpineConfig:
     special_requirements: list[str]
     word_output: str
     translation_package: str
+    humanize_tier: str
     ui_language: str
 
 
@@ -238,6 +250,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--reference-path", action="append", default=[])
     parser.add_argument("--citation-target-count", type=int, default=20)
     parser.add_argument("--special-requirement", action="append", default=[])
+    parser.add_argument("--humanize-tier", choices=HUMANIZE_TIERS, default="none")
     parser.add_argument("--setup-global", action="store_true", help="Choose and save global PaperSpine UI preferences.")
     parser.add_argument("--no-interactive", action="store_true")
     parser.add_argument("--keyboard-ui", action="store_true", help="Use arrow-key terminal UI when a real Windows terminal is available.")
@@ -988,6 +1001,7 @@ def base_config_from_args(args: argparse.Namespace, ui_language: str) -> PaperSp
         special_requirements=list(args.special_requirement),
         word_output=args.word_output,
         translation_package=translation_package,
+        humanize_tier=args.humanize_tier,
         ui_language=ui_language,
     )
     if not args.no_interactive:
