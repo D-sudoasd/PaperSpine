@@ -10,9 +10,11 @@ hardening pass.
 
 Validated areas:
 
-- Codex single-skill layout under `dist/codex/paper-spine`,
+- Codex flat suite layout under `dist/codex/skills/*`,
+- Codex legacy bundled fallback under `dist/codex/paper-spine`,
 - Claude Code flat suite layout under `dist/claude/skills/*`,
 - Claude Code commands under `dist/claude/commands/*`,
+- OpenClaw flat suite layout under `dist/openclaw/skills/*`,
 - absence of a root `SKILL.md` to avoid duplicate Codex discovery,
 - Claude Code plugin manifest,
 - top-level `install.ps1`,
@@ -24,6 +26,10 @@ Validated areas:
 - LaTeX/style/revision scripts,
 - install layout simulation,
 - local sync script safety,
+- orchestrator/branch-skill routing,
+- local or specified-path reference reading,
+- citation support bank generation and validation,
+- external-window intake UI branch packaging,
 - privacy and repository hygiene checks.
 
 ## Latest Quality Hardening
@@ -60,6 +66,22 @@ Key enforced rules:
   subset.
 - Reference/downloaded materials must live under
   `paper_rewriting_output/reference_materials/` with a `source_index.md`.
+- Reference reading supports `reference_mode: local_first | specified_paths |
+  web`; `local_first` indexes the current work folder before web
+  supplementation.
+- `paper-spine-citation` creates `citation_support_bank.md` as a separate
+  candidate pool for Introduction, Discussion, background, limitation, and
+  application claims.
+- `citation_target_count` defaults to 20; the candidate pool must be three
+  times that value, and roughly 80% should be recent using 2023 as the simple
+  threshold in 2026.
+- `paper-spine-ui` is a separate branch skill and `/paperspine` is expected to
+  route there automatically when config is missing.
+- The terminal UI now renders through a deterministic frame function, so tests
+  can verify layout text, Chinese output, and obvious mojibake regressions.
+- Users can call the full `paper-spine` orchestrator or call a branch skill
+  directly, including research-only, citation-only, LaTeX-only, and audit-only
+  runs.
 
 ## Commands Run
 
@@ -74,6 +96,8 @@ The unit suite also exercises these paths internally:
 ```bash
 python src/scripts/intake_wizard.py --no-interactive ...
 python src/scripts/material_inventory.py ...
+python src/scripts/reference_inventory.py ...
+python src/scripts/citation_bank_check.py ...
 python src/scripts/artifact_check.py ... --markdown --write
 python src/scripts/word_guard.py ... --markdown
 python src/scripts/style_metrics.py ... --markdown
@@ -86,14 +110,20 @@ python src/scripts/sync_local_installs.py --clean-legacy ...
 
 | Area | Result | Notes |
 |---|---|---|
-| Unit tests | PASS | 42 tests passed. |
+| Unit tests | PASS | 46 tests passed. |
 | Python compile check | PASS | `src/`, `dist/`, and tests compile. |
+| Branch skill layout | PASS | Main orchestrator plus UI, intake, research, citation, rewrite, build, LaTeX, and audit branch skills are present and individually callable. |
 | Claude Code plugin manifest | PASS | Manifest paths point to `dist/claude/skills/*`. |
 | Root duplicate guard | PASS | Root `SKILL.md` is absent by design. |
-| Codex release layout | PASS | `dist/codex/paper-spine` contains the single official-style Codex skill bundling all workflows. |
+| Codex release layout | PASS | `dist/codex/skills/*` exposes all suite skills; `dist/codex/paper-spine` remains as a legacy bundled fallback. |
 | Claude Code release layout | PASS | `dist/claude/skills/*` is flat and `.claude-plugin` points to those folders. |
-| Installer script | PASS | `install.ps1` installs Codex, Claude skills, and Claude commands from `dist/`. |
+| OpenClaw release layout | PASS | `dist/openclaw/skills/*` exposes the same flat suite for OpenClaw-style `SKILL.md` discovery. |
+| Installer script | PASS | `install.ps1` installs Codex, Claude Code, OpenClaw skills, and Claude commands from `dist/`. |
 | Intake wizard | PASS | Rewrite/build, flash/pro, English/Chinese, Word option, and translation package paths covered. |
+| UI branch packaging | PASS | `paper-spine-ui` includes the external terminal launcher and wizard copy. |
+| UI layout smoke test | PASS | Static keyboard-frame preview renders clean Chinese labels, left field navigation, right detail panel, and no mojibake tokens. |
+| Reference inventory | PASS | Local/specified reference paths are indexed into `reference_materials/source_index.md`. |
+| Citation bank check | PASS | 3x candidate-count and recent-paper coverage are enforced. |
 | Material inventory | PASS | Images, PDFs, Word/text, LaTeX, data, and code files classify correctly. |
 | Artifact check | PASS | Missing artifacts fail; final LaTeX is mandatory; PDF and Word policies are enforced. |
 | Translation package check | PASS | English + Chinese package requires all common and workflow-specific translated MD artifacts. |
@@ -118,10 +148,28 @@ python src/scripts/sync_local_installs.py --clean-legacy ...
 - Extended artifact tests to require research-after-intake artifacts,
   reference material indexing, `writing_rationale_matrix.md`, and complete
   translation-package coverage.
+- Added `reference_inventory.py` and required local/specified-path source
+  indexing before web-only literature expansion.
+- Added `paper-spine-citation` and `citation_bank_check.py` to force a separate
+  citation support bank with 3x candidates, sentence-level support claims, and
+  recent-paper coverage.
+- Added `paper-spine-ui` as the dedicated interaction branch and bundled the
+  external terminal launcher plus wizard in the Claude Code suite.
+- Rebuilt the terminal UI layout: centered welcome screen, cleaner white ridge
+  wordmark, stable field/detail panels, full-width/Chinese-aware text
+  measurement, and a static preview command for testing.
+- Updated Codex single-skill instructions to use the same branch workflow
+  internally.
 - Verified Claude plugin metadata paths after the documentation and structure changes.
 - Cleaned generated `__pycache__` directories after test and compile runs.
 - Restored two host-specific release layouts: `dist/codex/paper-spine` as a single official-style Codex skill and `dist/claude/skills/*` as the Claude Code flat suite.
 - Removed UTF-8 BOM from PaperSpine metadata/text files; Codex appears to skip `SKILL.md` when frontmatter is preceded by BOM bytes.
+- Added `dist/codex/skills/*` so Codex users can call either the full workflow
+  or individual branch skills.
+- Added `dist/openclaw/skills/*` so OpenClaw users can install the same flat
+  suite format.
+- Updated `install.ps1` and `sync_local_installs.py` to install all three
+  hosts: Codex, Claude Code, and OpenClaw.
 
 ## Remaining Manual Checks
 
@@ -129,6 +177,8 @@ These require real host application behavior and were not claimed as automated:
 
 - restart Codex and confirm the slash menu shows one entry per PaperSpine skill;
 - restart Claude Code and confirm plugin skill discovery through `/plugin install`;
+- restart OpenClaw and confirm `paper-spine` plus `paper-spine-*` branch skills
+  are discoverable from `~/.openclaw/skills`;
 - run a full real manuscript workflow and inspect whether the rationale matrix
   actually drives substantive section-level rewrites.
 

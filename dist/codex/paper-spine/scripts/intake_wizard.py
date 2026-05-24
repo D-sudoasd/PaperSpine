@@ -10,6 +10,7 @@ import re
 import shutil
 import sys
 import textwrap
+import unicodedata
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -21,6 +22,7 @@ LANGUAGES = ("en", "zh")
 UI_LANGUAGES = ("zh", "en")
 WORD_OUTPUTS = ("none", "docx")
 TRANSLATION_PACKAGES = ("none", "zh")
+REFERENCE_MODES = ("local_first", "specified_paths", "web")
 GLOBAL_CONFIG_ENV = "PAPERSPINE_CONFIG_HOME"
 
 CHOICE_FIELDS = {
@@ -30,6 +32,7 @@ CHOICE_FIELDS = {
     "output_language": LANGUAGES,
     "word_output": WORD_OUTPUTS,
     "translation_package": TRANSLATION_PACKAGES,
+    "reference_mode": REFERENCE_MODES,
     "ui_language": UI_LANGUAGES,
 }
 
@@ -45,6 +48,9 @@ FIELD_ORDER = (
     "materials_dir",
     "user_motivation",
     "official_urls",
+    "reference_mode",
+    "reference_paths",
+    "citation_target_count",
     "special_requirements",
     "ui_language",
 )
@@ -76,6 +82,11 @@ CHOICE_HELP = {
         "none": ("不翻译", "Do not translate"),
         "zh": ("生成完整中文翻译包", "Generate complete Chinese translation package"),
     },
+    "reference_mode": {
+        "local_first": ("默认先读取本地/当前工作文件夹，再补充网络来源", "Default: read local/current-folder references first, then supplement from web"),
+        "specified_paths": ("只优先读取用户指定的本地参考文献路径", "Prefer user-specified local reference paths"),
+        "web": ("主要从网络检索参考材料", "Mainly collect references from the web"),
+    },
     "ui_language": {
         "zh": ("中文界面", "Chinese interface"),
         "en": ("English UI", "English interface"),
@@ -104,6 +115,9 @@ LABELS = {
         "materials_dir": "素材文件夹路径",
         "user_motivation": "初始动机假设",
         "official_urls": "官方链接",
+        "reference_mode": "文献读取模式",
+        "reference_paths": "本地参考文献路径",
+        "citation_target_count": "最终引用目标数",
         "special_requirements": "特殊要求",
         "review": "检查配置",
         "confirm": "确认写入配置",
@@ -111,7 +125,18 @@ LABELS = {
         "invalid": "输入无效，请重新选择。",
         "wrote": "已写入",
         "keyboard_help": "←/→ 切换选项；↑/↓ 切换字段；Enter 编辑/确认；S 保存；Q 退出",
+        "keyboard_subtitle": "上下切换字段，左右切换选项，所有路径与清单字段可按 Enter 直接编辑。",
+        "progress": "进度",
+        "current_value": "当前值",
+        "fields_header": "配置字段",
+        "previous": "上一个",
+        "next": "下一个",
+        "current_marker": "当前",
+        "choice_hint": "左右键切换候选项，当前项位于中间。",
+        "text_field_hint": "该字段已尽量从当前文件夹自动读取；Enter 可手动覆盖。",
+        "save_hint": "检查无误后按 S 或 Enter 保存配置。",
         "text_help": "输入新内容。列表字段可用分号分隔。直接回车保留当前值。",
+        "last_field_hint": "←/→ 切换语言，按 Enter 保存并退出。",
         "save": "保存并退出",
         "quit": "退出但不保存",
         "auto": "自动读取",
@@ -139,6 +164,9 @@ LABELS = {
         "materials_dir": "Materials directory",
         "user_motivation": "Initial motivation hypothesis",
         "official_urls": "Official URLs",
+        "reference_mode": "Reference reading mode",
+        "reference_paths": "Local reference paths",
+        "citation_target_count": "Target citation count",
         "special_requirements": "Special requirements",
         "review": "Review configuration",
         "confirm": "Write config",
@@ -146,7 +174,18 @@ LABELS = {
         "invalid": "Invalid input. Please choose again.",
         "wrote": "Wrote",
         "keyboard_help": "Left/Right: option; Up/Down: field; Enter: edit/confirm; S: save; Q: quit",
+        "keyboard_subtitle": "Use Up/Down for fields, Left/Right for choices, and Enter to edit paths or lists.",
+        "progress": "Progress",
+        "current_value": "Current value",
+        "fields_header": "Fields",
+        "previous": "Previous",
+        "next": "Next",
+        "current_marker": "Current",
+        "choice_hint": "Use Left/Right to cycle choices. The active value is centered.",
+        "text_field_hint": "Auto-filled from the current folder when possible. Press Enter to override.",
+        "save_hint": "Press S or Enter to save after review.",
         "text_help": "Enter a new value. Separate list fields with semicolons. Press Enter to keep current.",
+        "last_field_hint": "Left/Right to switch language, Enter to save and exit.",
         "save": "Save and exit",
         "quit": "Exit without saving",
         "auto": "Auto-read",
@@ -167,6 +206,9 @@ class PaperSpineConfig:
     draft_path: str
     user_motivation: str
     official_urls: list[str]
+    reference_mode: str
+    reference_paths: list[str]
+    citation_target_count: int
     special_requirements: list[str]
     word_output: str
     translation_package: str
@@ -192,11 +234,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--draft-path", default="")
     parser.add_argument("--user-motivation", default="")
     parser.add_argument("--official-url", action="append", default=[])
+    parser.add_argument("--reference-mode", choices=REFERENCE_MODES, default="local_first")
+    parser.add_argument("--reference-path", action="append", default=[])
+    parser.add_argument("--citation-target-count", type=int, default=20)
     parser.add_argument("--special-requirement", action="append", default=[])
     parser.add_argument("--setup-global", action="store_true", help="Choose and save global PaperSpine UI preferences.")
     parser.add_argument("--no-interactive", action="store_true")
     parser.add_argument("--keyboard-ui", action="store_true", help="Use arrow-key terminal UI when a real Windows terminal is available.")
     parser.add_argument("--classic-input", action="store_true", help="Force numbered prompt input.")
+    parser.add_argument("--preview-keyboard-frame", action="store_true", help="Print a static keyboard UI frame for tests/previews and exit.")
+    parser.add_argument("--preview-width", type=int, default=118)
     return parser.parse_args()
 
 
@@ -249,14 +296,38 @@ def ansi(text: str, code: str) -> str:
     return f"\033[{code}m{text}\033[0m"
 
 
+def strip_ansi(text: str) -> str:
+    return ANSI_RE.sub("", text)
+
+
+def char_width(char: str) -> int:
+    if unicodedata.combining(char):
+        return 0
+    return 2 if unicodedata.east_asian_width(char) in {"F", "W"} else 1
+
+
+def display_width(text: str) -> int:
+    return sum(char_width(char) for char in strip_ansi(text))
+
+
 def visible_len(text: str) -> int:
-    return len(ANSI_RE.sub("", text))
+    return display_width(text)
 
 
 def crop_plain(text: str, width: int) -> str:
     if width <= 1:
         return ""
-    return text if len(text) <= width else text[: max(0, width - 1)] + "…"
+    if display_width(text) <= width:
+        return text
+    current = 0
+    chars: list[str] = []
+    for char in text:
+        next_width = current + char_width(char)
+        if next_width > max(0, width - 1):
+            break
+        chars.append(char)
+        current = next_width
+    return "".join(chars) + "…"
 
 
 def pad_ansi(text: str, width: int, align: str = "center") -> str:
@@ -278,6 +349,44 @@ def term_width(default: int = 118) -> int:
     return max(96, shutil.get_terminal_size((default, 36)).columns)
 
 
+def term_height(default: int = 34) -> int:
+    return max(24, shutil.get_terminal_size((118, default)).lines)
+
+
+def wrap_plain(text: str, width: int, max_lines: int = 2) -> list[str]:
+    text = " ".join(str(text).split()) or ""
+    if not text:
+        return [""]
+    lines: list[str] = []
+    current = ""
+    current_width = 0
+    for char in text:
+        if char == "\n":
+            lines.append(current)
+            current = ""
+            current_width = 0
+            continue
+        next_width = current_width + char_width(char)
+        if next_width > width and current:
+            lines.append(current.rstrip())
+            current = char
+            current_width = char_width(char)
+            if len(lines) >= max_lines:
+                break
+        else:
+            current += char
+            current_width = next_width
+    if current and len(lines) < max_lines:
+        lines.append(current.rstrip())
+    if len(lines) == max_lines and display_width(" ".join(lines)) < display_width(text):
+        lines[-1] = crop_plain(lines[-1], max(1, width))
+    return lines or [""]
+
+
+def style(text: str, code: str, color: bool = True) -> str:
+    return ansi(text, code) if color else text
+
+
 def safe_input(prompt: str = "> ") -> str:
     try:
         return input(prompt).strip()
@@ -285,7 +394,7 @@ def safe_input(prompt: str = "> ") -> str:
         return ""
 
 
-def read_key() -> str:
+def _read_key_windows() -> str:
     import msvcrt
 
     ch = msvcrt.getwch()
@@ -299,6 +408,48 @@ def read_key() -> str:
     if ch in ("q", "Q", "\x1b"):
         return "quit"
     return ch
+
+
+def _read_key_unix() -> str:
+    import termios
+    import tty
+
+    fd = sys.stdin.fileno()
+    old = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        ch = sys.stdin.read(1)
+        if ch == "\x1b":
+            old_blocking = termios.tcgetattr(fd)
+            try:
+                attrs = termios.tcgetattr(fd)
+                attrs[5][termios.VMIN] = 0
+                attrs[5][termios.VTIME] = 1
+                termios.tcsetattr(fd, termios.TCSANOW, attrs)
+                nxt = sys.stdin.read(1)
+            finally:
+                termios.tcsetattr(fd, termios.TCSANOW, old_blocking)
+            if nxt == "[":
+                code = sys.stdin.read(1)
+                return {"A": "up", "B": "down", "C": "right", "D": "left"}.get(code, "")
+            return "quit"
+        if ch in ("\r", "\n"):
+            return "enter"
+        if ch in ("s", "S"):
+            return "save"
+        if ch in ("q", "Q"):
+            return "quit"
+        if ord(ch) == 3:
+            raise KeyboardInterrupt()
+        return ch
+    finally:
+        termios.tcsetattr(fd, termios.TCSANOW, old)
+
+
+def read_key() -> str:
+    if os.name == "nt":
+        return _read_key_windows()
+    return _read_key_unix()
 
 
 def clear_screen() -> None:
@@ -326,15 +477,15 @@ def print_welcome_screen(ui_language: str, wait: bool = False) -> None:
         return
     if wait:
         clear_screen()
-    width = min(term_width(), 122)
-    accent = "38;5;208"
+    width = min(term_width(), 126)
+    accent = "38;5;250"
     white = "1;97"
     muted = "90"
     mountain = [
-        "                 /\\                         /\\                 ",
-        "        /\\      /  \\        /\\      /\\     /  \\       /\\       ",
-        "   /\\  /  \\    /    \\  /\\  /  \\    /  \\   /    \\  /\\  /  \\     ",
-        "__/  \\/    \\__/      \\/  \\/    \\__/    \\_/      \\/  \\/    \\__",
+        "                    /\\                 /\\                         ",
+        "          /\\       /  \\      /\\       /  \\        /\\              ",
+        "   /\\    /  \\     /    \\    /  \\     /    \\      /  \\     /\\      ",
+        "__/  \\__/    \\___/      \\__/    \\___/      \\____/    \\___/  \\__",
     ]
     title = [
         "██████╗  █████╗ ██████╗ ███████╗██████╗ ███████╗██████╗ ██╗███╗   ██╗███████╗",
@@ -342,14 +493,8 @@ def print_welcome_screen(ui_language: str, wait: bool = False) -> None:
         "██████╔╝███████║██████╔╝█████╗  ██████╔╝███████╗██████╔╝██║██╔██╗ ██║█████╗  ",
         "██╔═══╝ ██╔══██║██╔═══╝ ██╔══╝  ██╔══██╗╚════██║██╔═══╝ ██║██║╚██╗██║██╔══╝  ",
         "██║     ██║  ██║██║     ███████╗██║  ██║███████║██║     ██║██║ ╚████║███████╗",
-        "╚═╝     ╚═╝  ╚═╝╚═╝     ╚══════╝╚═╝  ╚═╝╚══════╝╚═╝     ╚═╝╚═╝  ╚═══╝╚══════╝",
     ]
-    lines: list[str] = [
-        ansi("PaperSpine v2", accent),
-        "",
-        ansi(tr(ui_language, "welcome"), white),
-        "",
-    ]
+    lines: list[str] = ["", ansi(tr(ui_language, "welcome"), muted), ""]
     lines.extend(ansi(line, white) for line in mountain)
     lines.append("")
     lines.extend(ansi(line, white) for line in title)
@@ -363,12 +508,17 @@ def print_welcome_screen(ui_language: str, wait: bool = False) -> None:
             tr(ui_language, "why_2"),
             tr(ui_language, "why_3"),
             "",
-            ansi("𝕏  X: Wbingo353332", muted),
-            ansi("♪  抖音: 91362158854", muted),
-            ansi("▣  小红书: 4770513150", muted),
+            ansi("X: Wbingo353332", muted),
+            ansi("Douyin: 91362158854", muted),
+            ansi("Xiaohongshu: 4770513150", muted),
+            "",
         ]
     )
-    print_centered_box(lines, width, accent=accent)
+    print()
+    print(pad_ansi(ansi("PaperSpine v2", accent), width))
+    print()
+    for line in lines:
+        print(pad_ansi(line, width))
     if wait:
         print()
         print(pad_ansi(ansi(tr(ui_language, "continue"), muted), width))
@@ -444,12 +594,17 @@ def edit_config(config: PaperSpineConfig) -> PaperSpineConfig:
 
 
 def can_use_keyboard_ui(force: bool = False) -> bool:
-    if os.name != "nt":
-        return False
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         return False
+    if os.name == "nt":
+        try:
+            import msvcrt  # noqa: F401
+        except ImportError:
+            return False
+        return True
     try:
-        import msvcrt  # noqa: F401
+        import termios  # noqa: F401
+        import tty  # noqa: F401
     except ImportError:
         return False
     return True
@@ -495,8 +650,13 @@ def edit_field(config: PaperSpineConfig, field: str, classic: bool = False) -> N
     answer = safe_input("> ")
     if not answer:
         return
-    if field in {"official_urls", "special_requirements"}:
+    if field in {"official_urls", "special_requirements", "reference_paths"}:
         setattr(config, field, split_items(answer))
+    elif field == "citation_target_count":
+        try:
+            config.citation_target_count = int(answer)
+        except ValueError:
+            return
     else:
         setattr(config, field, answer)
     normalize_config(config)
@@ -509,6 +669,11 @@ def normalize_config(config: PaperSpineConfig) -> None:
         config.materials_dir = config.materials_dir or ""
     else:
         config.draft_path = config.draft_path or ""
+    if config.reference_mode not in REFERENCE_MODES:
+        config.reference_mode = "local_first"
+    if not config.reference_paths:
+        config.reference_paths = ["."]
+    config.citation_target_count = max(1, int(config.citation_target_count or 20))
 
 
 def find_first_existing_dir(names: tuple[str, ...]) -> str:
@@ -593,6 +758,15 @@ def auto_config_project(config: PaperSpineConfig, args: argparse.Namespace) -> N
         config.user_motivation = infer_motivation(text, config.ui_language)
     if not args.official_url:
         config.official_urls = infer_urls(text)
+    if not args.reference_path:
+        reference_dirs = [
+            path.name
+            for path in cwd.iterdir()
+            if path.is_dir()
+            and path.name.lower()
+            in {"reference_materials", "references", "literature", "papers", "citations", "文献", "参考文献"}
+        ]
+        config.reference_paths = reference_dirs or ["."]
     if not args.special_requirement:
         requirements = [
             "必须输出 final_paper/main.tex；如果本机有 LaTeX 编译器则编译 paper.pdf。",
@@ -610,32 +784,153 @@ def auto_config_project(config: PaperSpineConfig, args: argparse.Namespace) -> N
 def field_label(config: PaperSpineConfig, field: str, index: int, selected: bool, width: int) -> str:
     label = f"{index:02d}. {tr(config.ui_language, field)}"
     color = "1;97" if selected else "90"
-    return pad_ansi(ansi(label, color), width)
+    marker = ">" if selected else " "
+    return pad_ansi(ansi(f"{marker} {label}", color), width, align="left")
 
 
-def value_display(config: PaperSpineConfig, field: str, width: int) -> str:
+def choice_columns(config: PaperSpineConfig, field: str, width: int, color: bool = True) -> list[str]:
     gray = "90"
     white = "1;97"
     triplet = option_triplet(config, field)
-    if triplet:
-        prev, current, nxt = triplet
-        left = ansi(help_text(field, prev, config.ui_language) or prev, gray)
-        mid = ansi(help_text(field, current, config.ui_language) or current, white)
-        right = ansi(help_text(field, nxt, config.ui_language) or nxt, gray)
-        slot = max(12, (width - 6) // 3)
-        return (
-            pad_ansi(left, slot)
-            + "   "
-            + pad_ansi(mid, slot)
-            + "   "
-            + pad_ansi(right, slot)
-        )[: width + 30]
+    if not triplet:
+        return []
+    prev, current, nxt = triplet
+    slot = max(16, (width - 8) // 3)
+    items = [
+        ("<- " + tr(config.ui_language, "previous"), prev, gray),
+        (tr(config.ui_language, "current_marker"), current, white),
+        (tr(config.ui_language, "next") + " ->", nxt, gray),
+    ]
+    rows: list[list[str]] = []
+    for marker, value, item_color in items:
+        desc = help_text(field, value, config.ui_language) or value
+        lines = [
+            style(marker, item_color, color),
+            style(value, item_color, color),
+        ]
+        lines.extend(style(line, item_color, color) for line in wrap_plain(desc, slot, max_lines=2))
+        rows.append([pad_ansi(line, slot) for line in lines[:4]])
+    while any(len(row) < 4 for row in rows):
+        for row in rows:
+            if len(row) < 4:
+                row.append(" " * slot)
+    return [
+        rows[0][line] + "  " + rows[1][line] + "  " + rows[2][line]
+        for line in range(4)
+    ]
+
+
+def text_value_lines(config: PaperSpineConfig, field: str, width: int, color: bool = True) -> list[str]:
     current = rendered_value(config, field) or tr(config.ui_language, "empty")
-    left = ansi(tr(config.ui_language, "auto"), gray)
-    mid = ansi(crop_plain(current, max(10, width // 2)), white)
-    right = ansi(tr(config.ui_language, "enter_edit"), gray)
-    slot = max(12, (width - 6) // 3)
-    return pad_ansi(left, slot) + "   " + pad_ansi(mid, slot) + "   " + pad_ansi(right, slot)
+    current_lines = wrap_plain(current, max(24, width - 8), max_lines=4)
+    lines = [
+        style(tr(config.ui_language, "current_value"), "90", color),
+        *[style(line, "1;97", color) for line in current_lines],
+        "",
+        style(tr(config.ui_language, "text_field_hint"), "90", color),
+    ]
+    return lines
+
+
+def right_panel_lines(config: PaperSpineConfig, field: str, width: int, index: int, total: int, color: bool = True) -> list[str]:
+    if field == "save":
+        title = tr(config.ui_language, "save")
+        lines = [
+            style(title, "1;97", color),
+            "",
+            style(tr(config.ui_language, "save_hint"), "90", color),
+            "",
+            style("S / Enter", "1;97", color),
+        ]
+        return [pad_ansi(line, width) for line in lines]
+
+    title = tr(config.ui_language, field)
+    value = rendered_value(config, field) or tr(config.ui_language, "empty")
+    header = f"{tr(config.ui_language, 'progress')} {index + 1}/{total - 1} · {title}"
+    lines = [
+        style(header, "1;97", color),
+        style(f"{tr(config.ui_language, 'current_value')}: {crop_plain(value, max(12, width - 18))}", "90", color),
+        "",
+    ]
+    if field in CHOICE_FIELDS:
+        if index == total - 2:
+            lines.append(style(tr(config.ui_language, "last_field_hint"), "1;97", color))
+        else:
+            lines.append(style(tr(config.ui_language, "choice_hint"), "90", color))
+        lines.append("")
+        lines.extend(choice_columns(config, field, width, color=color))
+    else:
+        lines.extend(text_value_lines(config, field, width, color=color))
+    return [pad_ansi(line, width, align="left") for line in lines]
+
+
+def render_keyboard_frame(
+    config: PaperSpineConfig,
+    index: int = 0,
+    width: int | None = None,
+    height: int | None = None,
+    color: bool = True,
+) -> list[str]:
+    fields = list(FIELD_ORDER) + ["save"]
+    index = max(0, min(index, len(fields) - 1))
+    field = fields[index]
+    width = max(96, min(width or term_width(), 140))
+    height = max(24, height or term_height())
+    left_w = max(30, int((width - 3) * 0.30))
+    right_w = width - left_w - 3
+    body_h = min(max(len(fields) + 2, 18), max(18, height - 7))
+    accent = "38;5;244"
+    muted = "90"
+
+    left_items = [
+        field_label(config, item, row + 1, row == index, left_w - 2)
+        if item != "save"
+        else pad_ansi(style(f"S. {tr(config.ui_language, 'save')}", "1;97" if row == index else muted, color), left_w - 2, align="left")
+        for row, item in enumerate(fields)
+    ]
+    if len(left_items) > body_h:
+        half = body_h // 2
+        start = min(max(0, index - half), len(left_items) - body_h)
+        left_items = left_items[start : start + body_h]
+    top_pad = max(0, (body_h - len(left_items)) // 2)
+    left_lines = [" " * (left_w - 2)] * top_pad + left_items
+    left_lines += [" " * (left_w - 2)] * (body_h - len(left_lines))
+
+    right_content = right_panel_lines(config, field, right_w - 2, index, len(fields), color=color)
+    right_top_pad = max(0, (body_h - len(right_content)) // 2)
+    right_lines = [" " * (right_w - 2)] * right_top_pad + right_content
+    right_lines += [" " * (right_w - 2)] * (body_h - len(right_lines))
+
+    top = style("╭" + "─" * (width - 2) + "╮", accent, color)
+    split_top = style("├" + "─" * left_w + "┬" + "─" * right_w + "┤", accent, color)
+    split_mid = style("├" + "─" * left_w + "┼" + "─" * right_w + "┤", accent, color)
+    bottom = style("╰" + "─" * left_w + "┴" + "─" * right_w + "╯", accent, color)
+    title = style("PaperSpine", "1;97", color) + style("  " + tr(config.ui_language, "banner"), muted, color)
+    subtitle = style(tr(config.ui_language, "keyboard_subtitle"), muted, color)
+    help_line = style(tr(config.ui_language, "keyboard_help"), muted, color)
+
+    frame = [
+        top,
+        style("│", accent, color) + pad_ansi(title, width - 2) + style("│", accent, color),
+        style("│", accent, color) + pad_ansi(subtitle, width - 2) + style("│", accent, color),
+        split_top,
+        style("│", accent, color)
+        + pad_ansi(style(tr(config.ui_language, "fields_header"), muted, color), left_w)
+        + style("│", accent, color)
+        + pad_ansi(help_line, right_w)
+        + style("│", accent, color),
+        split_mid,
+    ]
+    for left, right in zip(left_lines, right_lines):
+        frame.append(
+            style("│", accent, color)
+            + pad_ansi(left, left_w)
+            + style("│", accent, color)
+            + pad_ansi(right, right_w, align="left")
+            + style("│", accent, color)
+        )
+    frame.append(bottom)
+    return frame
 
 
 def keyboard_editor(config: PaperSpineConfig) -> PaperSpineConfig:
@@ -644,25 +939,8 @@ def keyboard_editor(config: PaperSpineConfig) -> PaperSpineConfig:
     while True:
         normalize_config(config)
         field = fields[index]
-        width = term_width()
-        left_w = max(28, int(width * 0.30))
-        right_w = max(58, width - left_w - 5)
         clear_screen()
-        print(ansi("╭" + "─" * (width - 2) + "╮", "38;5;208"))
-        print(ansi("│", "38;5;208") + pad_ansi(ansi("PaperSpine", "1;97") + "  " + tr(config.ui_language, "banner"), width - 2) + ansi("│", "38;5;208"))
-        print(ansi("├" + "─" * left_w + "┬" + "─" * (width - left_w - 3) + "┤", "38;5;208"))
-        print(ansi("│", "38;5;208") + pad_ansi(ansi("Fields", "90"), left_w) + ansi("│", "38;5;208") + pad_ansi(ansi(tr(config.ui_language, "keyboard_help"), "90"), width - left_w - 3) + ansi("│", "38;5;208"))
-        print(ansi("├" + "─" * left_w + "┼" + "─" * (width - left_w - 3) + "┤", "38;5;208"))
-        for row, item in enumerate(fields):
-            selected = row == index
-            if item == "save":
-                left = pad_ansi(ansi("S. " + tr(config.ui_language, "save"), "38;5;208" if selected else "90"), left_w)
-                right = pad_ansi(ansi(tr(config.ui_language, "confirm"), "1;97" if selected else "90"), width - left_w - 3)
-            else:
-                left = field_label(config, item, row + 1, selected, left_w)
-                right = pad_ansi(value_display(config, item, right_w), width - left_w - 3)
-            print(ansi("│", "38;5;208") + left + ansi("│", "38;5;208") + right + ansi("│", "38;5;208"))
-        print(ansi("╰" + "─" * left_w + "┴" + "─" * (width - left_w - 3) + "╯", "38;5;208"))
+        print("\n".join(render_keyboard_frame(config, index=index, color=True)))
         key = read_key()
         if key == "up":
             index = (index - 1) % len(fields)
@@ -676,6 +954,8 @@ def keyboard_editor(config: PaperSpineConfig) -> PaperSpineConfig:
             if field == "save":
                 return config
             if field in CHOICE_FIELDS:
+                if index == len(fields) - 2:
+                    return config
                 index = (index + 1) % len(fields)
             else:
                 edit_field(config, field)
@@ -702,6 +982,9 @@ def base_config_from_args(args: argparse.Namespace, ui_language: str) -> PaperSp
         draft_path=args.draft_path,
         user_motivation=args.user_motivation,
         official_urls=list(args.official_url),
+        reference_mode=args.reference_mode,
+        reference_paths=list(args.reference_path) or ["."],
+        citation_target_count=max(1, args.citation_target_count),
         special_requirements=list(args.special_requirement),
         word_output=args.word_output,
         translation_package=translation_package,
@@ -782,6 +1065,13 @@ def build_config(args: argparse.Namespace) -> PaperSpineConfig:
         config.materials_dir = ask_text("materials_dir", ui_language, config.materials_dir)
     config.user_motivation = ask_text("user_motivation", ui_language, config.user_motivation)
     config.official_urls.extend(split_items(ask_text("official_urls", ui_language)))
+    config.reference_mode = choose("reference_mode", REFERENCE_MODES, ui_language, default=config.reference_mode)
+    config.reference_paths = split_items(ask_text("reference_paths", ui_language, "; ".join(config.reference_paths)))
+    raw_count = ask_text("citation_target_count", ui_language, str(config.citation_target_count))
+    try:
+        config.citation_target_count = int(raw_count)
+    except ValueError:
+        config.citation_target_count = 20
     config.special_requirements.extend(split_items(ask_text("special_requirements", ui_language)))
     normalize_config(config)
     return edit_config(config)
@@ -800,6 +1090,12 @@ def markdown_config(config: PaperSpineConfig) -> str:
 def main() -> int:
     configure_windows_console()
     args = parse_args()
+    if args.preview_keyboard_frame:
+        ui_language = args.ui_language or load_global_config().get("ui_language", "zh")
+        config = base_config_from_args(args, ui_language)
+        auto_config_project(config, args)
+        print("\n".join(render_keyboard_frame(config, index=0, width=args.preview_width, color=False)))
+        return 0
     config = build_config(args)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)

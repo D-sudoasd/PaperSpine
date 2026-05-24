@@ -1,12 +1,13 @@
 ---
 name: paper-spine
-description: Orchestrates the PaperSpine suite for motivation-driven paper/report rewriting or building from materials.
+description: Internal orchestrator — users should use /paperspine to start a full workflow.
 ---
 
 # PaperSpine Orchestrator
 
-Use this skill as the suite entrypoint. It routes the user to intake, research,
-rewrite, build, LaTeX, and audit skills.
+Use this skill as the suite entrypoint. It is the main orchestrator: it routes
+the user to UI, intake, research, citation, rewrite, build, LaTeX,
+translate, audit, and update branch skills.
 
 ## Operating Principle
 
@@ -40,37 +41,57 @@ Required fields:
 | `special_requirements` | list |
 | `word_output` | `none`, `docx` |
 | `translation_package` | `none`, `zh` |
+| `reference_mode` | `local_first`, `specified_paths`, `web` |
+| `reference_paths` | list of local reference folders/files; default `["."]` |
+| `citation_target_count` | integer; default `20` |
 
 ## Non-Negotiable Route
 
 1. If configuration is missing or incomplete, run the terminal wizard from
-   `paper-spine-intake`; do not ask the user to hand-write JSON or answer a
-   long plain chat checklist when the terminal is available. The wizard is the
-   supported Claude Code/Codex command-line UI. In Claude Code, `/paperspine`
-   is the preferred entry: it launches intake automatically when configuration
-   is missing. Use `scripts/launch_paperspine_ui.ps1` only as the underlying
-   launcher when implementing that command.
+   `paper-spine-ui`, then `paper-spine-intake`; do not ask the user to
+   hand-write JSON or answer a long plain chat checklist when a terminal is
+   available. The wizard is the supported Claude Code/Codex command-line UI.
+   In Claude Code, `/paperspine` is the preferred entry: it launches the
+   external intake window automatically when configuration is missing.
 2. Always create or verify `source_map.md`.
 3. Always use `paper-spine-research` before choosing the final motivation.
+   Research must first index local/default references according to
+   `reference_mode` and `reference_paths`; web collection supplements this
+   index but does not replace it.
 4. Research must create `reference_materials/`, `research_dossier.md`,
    `exemplar_learning_dossier.md`, `style_profile.md`, `sota_gap_map.md`, and
    `motivation_options_after_research.md`.
-5. Stop for user confirmation of the controlling motivation. Do not write or
+5. Use `paper-spine-citation` to create `citation_support_bank.md`. This bank
+   is separate from exemplar learning: it supports Introduction, Related Work,
+   Discussion, background, limitation, and application claims. Generate at
+   least `citation_target_count * 3` candidates; default target is 20, so the
+   default candidate pool is 60. About 80% should be recent, using
+   `current_year - 3` as the simple threshold.
+6. Stop for user confirmation of the controlling motivation. Do not write or
    rewrite until `confirmed_motivation.md` records the user's chosen motivation.
    The final motivation should be concise and specific. Do not inflate one
    narrow contribution into a multi-claim motivation.
-6. If `workflow` is `rewrite_existing`, use `paper-spine-rewrite`.
-7. If `workflow` is `build_from_materials`, use `paper-spine-build`.
-8. Before drafting, both workflows must create `section_blueprints.md` and
+7. If `workflow` is `rewrite_existing`, use `paper-spine-rewrite`.
+8. If `workflow` is `build_from_materials`, use `paper-spine-build`.
+9. Before drafting, both workflows must create `section_blueprints.md` and
    `writing_rationale_matrix.md`. The matrix is the execution plan, not a
    post-hoc summary.
-9. Use `paper-spine-latex` for final LaTeX structure, figure placement,
+10. Run the integrity audit: `python scripts/integrity_audit.py paper_rewriting_output --markdown --write`.
+    This produces `integrity_audit.md` — a teaching report where every finding
+    includes root cause, fix action, downstream impact, and a teaching note.
+    The report must show no BLOCKED findings before LaTeX compilation can proceed.
+11. Use `paper-spine-latex` for final LaTeX structure, figure placement,
    citation safety, and compile-oriented cleanup.
-10. Always produce final LaTeX source. Compile PDF when a TeX engine is
+12. Always produce final LaTeX source. Compile PDF when a TeX engine is
     available. Markdown alone is not a final PaperSpine output.
-11. If `word_output` is `docx`, produce and check a Word version.
-12. If `output_language` is `en` and `translation_package` is `zh`, translate every required intermediate Markdown artifact, every final result Markdown artifact, and the complete final paper text into `translation_zh/`, with a detailed coverage report. Large files such as `writing_rationale_matrix.md` must be translated row by row; summaries are not acceptable.
-13. Use `paper-spine-audit` before declaring the work complete.
+13. If `word_output` is `docx`, produce and check a Word version.
+14. If `output_language` is `en` and `translation_package` is `zh`, use
+    `paper-spine-translate` to produce the complete `translation_zh/` package.
+    Run `python scripts/translate_guard.py paper_rewriting_output --markdown --write`
+    and require PASS. The translation package must cover every required
+    intermediate and final artifact with row-by-row translation of large
+    tabular files. Summaries are not acceptable.
+15. Use `paper-spine-audit` before declaring the work complete.
 
 If another skill is unavailable, follow the referenced workflow locally and
 produce the same artifacts.
@@ -91,6 +112,7 @@ Common required artifacts:
 - `style_profile.md`
 - `sota_gap_map.md`
 - `motivation_options_after_research.md`
+- `citation_support_bank.md`
 - `confirmed_motivation.md`
 - `section_blueprints.md`
 - `writing_rationale_matrix.md`
@@ -156,13 +178,20 @@ reasoning that the user can learn why this writing move is better.
 A shallow matrix is a failure. If most rows say only "improve clarity" or
 "polish wording", stop and redo the research/blueprint stage.
 
+## Branch Map
+
+Read `references/orchestrator-branch-map.md` when the workflow needs to be
+debugged or when a branch output fails audit. The rule is simple: route back to
+the branch that owns the weak artifact instead of patching the final paper
+directly.
+
 ## Command-Line UI
 
 Claude Code and Codex do not guarantee a native graphical picker for skills.
 The supported UI is the bundled terminal wizard. When configuration is missing,
 run `paper-spine-intake`. In Claude Code, `/paperspine` must launch the intake
 UI automatically; do not ask the user to call a separate UI command. The legacy
-`/paperspine-ui` command may be used only as a manual fallback. The launcher
+`/paperspine-legacy` command may be used only as a manual fallback. The launcher
 opens the bundled terminal TUI, which supports Up/Down for option values,
 Left/Right for fields, Enter for edit or confirm, and `S` to save. Claude Code
 does not currently provide third-party skills with an API for embedding a custom

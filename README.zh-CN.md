@@ -2,11 +2,11 @@
 
 [English](README.md) | [中文](README.zh-CN.md)
 
-> 英文和中文 README 需要保持内容等价。任何一边更新时，另一边必须在同一次提交中同步更新。
+> 英文 README 和中文 README 作为内容等价版本维护。任意一边更新时，另一边也需要在同一次提交中同步更新。
 
-PaperSpine 是一个面向 Codex 和 Claude Code 的论文、报告写作 Skill Suite。
+PaperSpine 是一个面向 Codex、Claude Code 和 OpenClaw 的、以 motivation 为主线的论文与报告写作 skill suite。
 
-它的核心目标不是“让 AI 直接润色几句话”，而是让 AI 在写作前先理解目标场景、学习优秀样例、确认全文动机，再逐段规划和生成，并把每一处为什么这样写记录下来。
+它适合目标格式很重要的写作任务：期刊论文、会议论文、课程或技术报告、综述、竞赛论文。它要求 agent 在写作前先学习目标场景和优秀样例，再记录每一个写作单元为什么这样规划或修改。
 
 ## 仓库结构
 
@@ -14,34 +14,43 @@ PaperSpine 是一个面向 Codex 和 Claude Code 的论文、报告写作 Skill 
 PaperSpine/
   dist/
     codex/
-      paper-spine/              # Codex 单 skill 发行版
+      skills/                   # Codex 扁平 skill suite
+      paper-spine/              # 旧版 Codex 自包含兼容包
     claude/
       skills/                   # Claude Code 扁平 skill suite
         paper-spine/
+        paper-spine-ui/
         paper-spine-intake/
         paper-spine-research/
+        paper-spine-citation/
         paper-spine-rewrite/
         paper-spine-build/
         paper-spine-latex/
         paper-spine-audit/
-      commands/                 # Claude Code slash command
+        paper-spine-translate/
+        paper-spine-update/
+      commands/                 # Claude Code slash-command 辅助入口
         paperspine.md
-        paperspine-ui.md
+        paper-spine.md
+        paperspine-legacy.md
+    openclaw/
+      skills/                   # OpenClaw 扁平 skill suite
   src/
-    scripts/                    # 共享脚本
-    references/                 # 共享流程参考
-    agents/                     # 共享 agent 元数据
+    scripts/                    # 共享的确定性辅助脚本
+    references/                 # 共享工作流参考文档
+    agents/                     # 共享 agent 元数据源
   .claude-plugin/               # Claude Code 插件元数据
-  install.ps1                   # Windows 推荐安装脚本
+  install.ps1                   # Windows 安装脚本
+  install.sh                    # macOS / Linux 安装脚本
   README.md
   README.zh-CN.md
 ```
 
-`dist/` 是真正给用户安装的内容。`src/` 是开发用的共享脚本和参考资料。
+`dist/` 是真正用于安装的内容。`src/` 保留共享脚本和参考文档，便于开发与维护。
 
 ## 快速安装
 
-Windows PowerShell：
+Windows PowerShell:
 
 ```powershell
 git clone https://github.com/WUBING2023/PaperSpine.git
@@ -54,42 +63,47 @@ cd PaperSpine
 ```powershell
 .\install.ps1 -Target codex
 .\install.ps1 -Target claude
+.\install.ps1 -Target openclaw
 .\install.ps1 -Target all -CleanLegacy
 ```
 
-`-CleanLegacy` 会清理常见的旧安装目录，例如嵌套的 `PaperSpine`、`PaperSpineV2`、旧的 `paper-spine-*` 副本，避免 Codex 或 Claude Code 出现重复发现、找不到 skill 的问题。
+`-CleanLegacy` 会清理常见的旧 PaperSpine 目录，例如嵌套的 `PaperSpine`、`PaperSpineV2` 和旧的 `paper-spine-*` 副本，避免重复发现或找不到 skill。
 
-安装到 Codex 后：**Restart Codex**，然后使用 `$paper-spine` 或在 skill 列表里选择 `paper-spine`。
+安装到 Codex 后：**Restart Codex**。然后用 `$paper-spine` 启动全流程，或单独调用 `$paper-spine-research`、`$paper-spine-citation`、`$paper-spine-latex` 等分支 skill。
 
-安装到 Claude Code 后：重启或 reload Claude Code，然后使用：
+安装到 Claude Code 后：重启或 reload Claude Code，然后使用 `/paperspine`。
 
-```text
-/paperspine
-```
+安装到 OpenClaw 后：重启或 reload OpenClaw，然后用 `paper-spine` 启动全流程，或调用任意 `paper-spine-*` 分支 skill。
+
+安装脚本会把当前版本记录到 `~/.paperspine/install_state.json`，并保留 `~/.paperspine/config.json`，包括 UI 语言等全局配置。
 
 ## 手动安装
 
-Codex 需要一个自包含的单 skill：
+Codex 现在推荐使用扁平 suite，这样每个分支都可以被单独调用：
 
 ```text
-dist/codex/paper-spine
+dist/codex/skills/*
 ```
 
 复制到：
 
 ```text
-~/.codex/skills/paper-spine
+~/.codex/skills/
 ```
 
-最终结构应类似：
+最终 Codex 布局应该是：
 
 ```text
 ~/.codex/skills/paper-spine/SKILL.md
-~/.codex/skills/paper-spine/references/
-~/.codex/skills/paper-spine/scripts/
+~/.codex/skills/paper-spine-research/SKILL.md
+~/.codex/skills/paper-spine-citation/SKILL.md
+~/.codex/skills/paper-spine-latex/SKILL.md
+~/.codex/skills/paper-spine-update/SKILL.md
 ```
 
-Claude Code 需要扁平 skill 目录和可选 slash command：
+`dist/codex/paper-spine` 仍保留为旧版自包含兼容包，但推荐的新安装方式是 `dist/codex/skills/*`。
+
+Claude Code 需要扁平 skill 文件夹和可选 slash commands：
 
 ```text
 dist/claude/skills/*
@@ -103,18 +117,42 @@ dist/claude/commands/*.md
 ~/.claude/commands/
 ```
 
-最终结构应包含：
+最终 Claude Code 布局应该包含：
 
 ```text
 ~/.claude/skills/paper-spine/SKILL.md
+~/.claude/skills/paper-spine-ui/SKILL.md
 ~/.claude/skills/paper-spine-intake/SKILL.md
 ~/.claude/skills/paper-spine-research/SKILL.md
+~/.claude/skills/paper-spine-citation/SKILL.md
+~/.claude/skills/paper-spine-update/SKILL.md
 ~/.claude/commands/paperspine.md
+```
+
+OpenClaw 需要包含 `SKILL.md` 的 skill 文件夹：
+
+```text
+dist/openclaw/skills/*
+```
+
+复制到：
+
+```text
+~/.openclaw/skills/
+```
+
+最终 OpenClaw 布局应该包含：
+
+```text
+~/.openclaw/skills/paper-spine/SKILL.md
+~/.openclaw/skills/paper-spine-research/SKILL.md
+~/.openclaw/skills/paper-spine-citation/SKILL.md
+~/.openclaw/skills/paper-spine-update/SKILL.md
 ```
 
 ## Claude Code 插件安装
 
-也可以使用 Claude Code 插件方式安装：
+Claude Code 也可以使用 `.claude-plugin` 中的插件元数据：
 
 ```text
 /plugin marketplace add https://github.com/WUBING2023/PaperSpine
@@ -122,52 +160,149 @@ dist/claude/commands/*.md
 /reload-plugins
 ```
 
-`.claude-plugin` 中的插件配置指向 `dist/claude/skills`，不是 Codex 的单 skill 目录。
+插件 manifest 指向 `dist/claude/skills` 下的扁平 suite，而不是 Codex 的单 skill 目录。
 
-## Codex 和 Claude Code 的差异
+## Codex、Claude Code 与 OpenClaw 的差异
 
 | 宿主 | 安装单元 | 常用入口 | 原因 |
 | --- | --- | --- | --- |
-| Codex | `dist/codex/paper-spine` | `$paper-spine` | Codex 使用单个自包含 skill 更稳定，避免重复发现。 |
-| Claude Code | `dist/claude/skills/*` 和 `dist/claude/commands/*` | `/paperspine` | Claude Code 按扁平目录发现 skill，并支持 slash command。 |
+| Codex | `dist/codex/skills/*` | `$paper-spine` 或 `$paper-spine-*` | Codex 可以发现扁平 skill 文件夹，因此全流程和子 skill 都能调用。 |
+| Claude Code | `dist/claude/skills/*` 加 `dist/claude/commands/*` | `/paperspine` | Claude Code 按扁平文件夹发现 skills，并支持 slash-command 辅助入口。 |
+| OpenClaw | `dist/openclaw/skills/*` | `paper-spine` 或 `paper-spine-*` | OpenClaw skill 也是包含 `SKILL.md` 的目录，因此使用同一套扁平 suite。 |
 
-不要把整个仓库直接复制到 `skills` 目录。这是出现重复 skill 或完全找不到 skill 的主要原因。
+不要把整个仓库直接复制进 `skills` 文件夹。这是重复或缺失 skill 的主要原因。
 
-## 工作流
+## 主工作流
 
 PaperSpine 有两条平级主流程：
 
-1. **Rewrite Existing**：改进已有论文或报告，不把任务降级成简单润色。
-2. **Build From Materials**：从素材文件夹构筑论文或报告，素材可以包括说明文档、图片、PDF、实验结果、调研材料、初步草稿等。
+1. **Rewrite Existing**：改进已有论文或报告，但不把任务降级成简单润色。
+2. **Build From Materials**：从素材文件夹构筑论文或报告，素材可以包括说明文档、图片、PDF、数据摘要、部分初稿和实验描述。
 
 支持四类目标场景：
 
 - `journal`：期刊论文
 - `conference`：会议论文
-- `report/review`：课程报告、技术报告、综述
+- `report/review`：课程报告、技术报告或综述
 - `competition`：竞赛论文或竞赛报告
 
 研究深度：
 
-- `flash`：3 篇目标任务样例、3 篇同领域近期/高质量论文、官方要求。
-- `pro`：6 篇目标任务样例、6 篇同领域近期/高质量论文、官方要求。
+- `flash`：3 篇目标场景样例、3 篇近期/高质量同领域论文和官方要求。
+- `pro`：6 篇目标场景样例、6 篇近期/高质量同领域论文和官方要求。
 
 输出语言：
 
 - `English`
 - `Chinese`
 
-当选择英文输出时，可以额外生成 `translation_package`，把中间产物和最终 Markdown 产物翻译成中文，方便用户理解和复盘。
+选择英文输出时，PaperSpine 还可以生成 `translation_package`，把中间产物和最终 Markdown 产物翻译为中文。
+
+## 主控与分支 Skill
+
+PaperSpine 由一个主控 skill 加多个分支 skill 组成。主控 `paper-spine` 不直接修补句子，而是逐阶段路由：
+
+1. `paper-spine-ui`：打开外部终端配置 UI。
+2. `paper-spine-intake`：校验 `paper_spine_config.json`。
+3. `paper-spine-research`：学习目标场景、本地/指定参考资料和优秀样例。
+4. `paper-spine-citation`：构建逐句 claim 级别的引用支持库。
+5. `paper-spine-rewrite` 或 `paper-spine-build`：改写已有论文，或从素材构筑论文。
+6. `paper-spine-latex`：生成并检查 LaTeX、可用时生成 PDF，并处理可选 Word 输出。
+7. `paper-spine-audit`：检查产物完整性、写作思路深度、引用库质量、翻译覆盖率和文件健康度。
+8. `paper-spine-translate`：产出完整的 `translation_zh/` 翻译包，含逐行翻译。
+9. `paper-spine-update`：检查 GitHub `main` 上的最新版，并在保留全局配置的前提下更新本地安装。
+
+`rewrite_existing` 和 `build_from_materials` 共用研究、引用、写作思路矩阵、LaTeX、翻译和审计逻辑。
+
+用户可以通过 `paper-spine` 运行全流程，也可以只调用某一个分支：
+
+- `paper-spine-ui`：配置一次运行。
+- `paper-spine-intake`：校验或修复配置。
+- `paper-spine-research`：调研目标要求和优秀样例结构。
+- `paper-spine-citation`：只构建引用支持库。
+- `paper-spine-rewrite`：基于上游产物改写已有论文。
+- `paper-spine-build`：基于上游产物从素材构筑论文。
+- `paper-spine-latex`：组装/检查 LaTeX、PDF 和可选 Word。
+- `paper-spine-translate`：产出 translation_zh/ 翻译包。
+- `paper-spine-audit`：审计产物、翻译覆盖和写作思路深度。
+- `paper-spine-update`：检查或更新本地 PaperSpine 安装。
+
+## 更新 PaperSpine
+
+第一次安装之后，如果想检查新版本，可以单独调用更新分支 skill：
+
+```text
+$paper-spine-update
+```
+
+更新 skill 会运行：
+
+```powershell
+python scripts/paperspine_update.py --yes
+```
+
+它会把本地 `~/.paperspine/install_state.json` 中记录的版本和 GitHub `main` 分支的 `dist/paperspine_version.json` 进行比较。如果已经是最新版，会直接提示无需更新。如果发现新版本，会下载 GitHub 压缩包，校验 PaperSpine 目录结构，然后同步更新 Codex、Claude Code 和 OpenClaw 的 skill 文件夹，并保留 `~/.paperspine/config.json`。
+
+如果只想检查而不修改本地安装，可以运行：
+
+```powershell
+python scripts/paperspine_update.py --check-only
+```
+
+## 本地参考文献读取
+
+参考材料获取不再只依赖网络。配置字段 `reference_mode` 控制 PaperSpine 如何开始文献和样例读取：
+
+- `local_first`：默认模式。先索引当前工作文件夹中的参考材料，再按需进行网络补充。
+- `specified_paths`：只索引 `reference_paths` 中指定的文件夹或文件，再按任务需要补充。
+- `web`：用户没有本地参考材料时使用网络收集。
+
+本地参考路径会写入：
+
+```text
+paper_rewriting_output/reference_materials/source_index.md
+```
+
+辅助脚本：
+
+```powershell
+python src/scripts/reference_inventory.py . --output-dir paper_rewriting_output --mode local_first
+```
+
+PaperSpine 可以读取用户提供的 PDF、下载论文、BibTeX/RIS、模板、笔记、学校或竞赛文档。它不能绕过付费墙或私有数据库权限。
+
+## 引用支持库
+
+`paper-spine-citation` 会生成：
+
+```text
+paper_rewriting_output/citation_support_bank.md
+```
+
+它和优秀论文学习是两件事。样例论文用于学习结构和写法；引用支持库用于为 Introduction、Related Work、Discussion、局限性、应用背景等位置提供可选择的候选引用。
+
+默认行为：
+
+- `citation_target_count`: `20`
+- 候选池：`citation_target_count * 3`，默认是 `60`
+- 近期论文目标：约 `80%` 候选应来自近三年；在 2026 年，简单阈值是 2023 年及以后
+- 每一行候选都必须包含参考文献/BibTeX 风格信息、年份、来源，以及一两句可以支撑正文论述的句子
+
+检查引用库：
+
+```powershell
+python src/scripts/citation_bank_check.py paper_rewriting_output/citation_support_bank.md --target-count 20 --markdown
+```
 
 ## 配置 UI
 
-Claude Code 中推荐使用：
+Claude Code 推荐使用：
 
 ```text
 /paperspine
 ```
 
-这个命令会尽量自动启动 PaperSpine intake UI。若宿主终端不支持交互界面，则使用 Python wizard 兜底：
+当宿主终端允许时，这个命令会自动启动 PaperSpine intake UI。兜底方式是 Python wizard：
 
 ```powershell
 python src/scripts/intake_wizard.py
@@ -180,46 +315,49 @@ paper_rewriting_output/paper_spine_config.json
 paper_rewriting_output/paper_spine_config.md
 ```
 
-本地预览 TUI：
-
-```powershell
-python src/scripts/tui_preview_server.py --port 8765
-```
-
 ## 关键产物
 
-一次完整运行不应该只有最终论文，而应该留下完整的写作依据：
+一次完整运行不应该只有最终论文，而应该留下完整的可审计写作轨迹：
 
 ```text
 paper_rewriting_output/
   paper_spine_config.json
   paper_spine_config.md
-  downloaded_references/
+  reference_materials/
+    source_index.md
   research_dossier.md
-  motivation_candidates.md
+  exemplar_learning_dossier.md
+  style_profile.md
+  sota_gap_map.md
+  motivation_options_after_research.md
+  citation_support_bank.md
   confirmed_motivation.md
   source_inventory.md
   evidence_bank.md
   figure_asset_map.md
   claim_register.md
-  section_blueprint.md
+  section_blueprints.md
   writing_rationale_matrix.md
   rewrite_matrix.md
-  revision_audit.md
+  logic_transfer_audit.md
+  latex_report.md
+  final_artifact_manifest.md
   final_paper/
     main.tex
     references.bib
     figures/
-    paper.docx              # 可选 Word 版本
-    paper.pdf               # 如果本机有 LaTeX 编译器则生成
+    paper.docx              # 可选 Word 输出
+    paper.pdf               # 本机有 LaTeX 编译器时生成
   translation_package/       # 英文输出时可选
 ```
 
-其中最重要的是 `writing_rationale_matrix.md`。它需要按论文或报告的真实结构逐段记录：这一小块承担什么功能，如何服务确认后的 motivation，参考了哪些 SOTA 或目标场景样例，使用了哪些证据或引用，最终文本应该通过什么检查。
+最核心产物是 `writing_rationale_matrix.md`。它必须按照真实论文或报告结构逐单元解释：该单元承担什么功能，如何服务确认后的 motivation，学习了哪些 SOTA 或目标场景样例，使用了哪些证据，最终文本应通过什么检查。
+
+`citation_support_bank.md` 是第二个重要推理产物。它让每个候选引用在进入正文前，都先绑定到一个具体句子级 claim。
 
 ## 检查命令
 
-检查产物是否完整：
+检查产物完整性：
 
 ```powershell
 python src/scripts/artifact_check.py paper_rewriting_output --markdown --write
@@ -243,6 +381,18 @@ python src/scripts/latex_guard.py paper_rewriting_output/final_paper/main.tex --
 python src/scripts/word_guard.py paper_rewriting_output/final_paper/paper.docx --markdown
 ```
 
+检查本地参考材料索引：
+
+```powershell
+python src/scripts/reference_inventory.py . --output-dir paper_rewriting_output --mode local_first
+```
+
+检查引用候选覆盖：
+
+```powershell
+python src/scripts/citation_bank_check.py paper_rewriting_output/citation_support_bank.md --target-count 20 --markdown
+```
+
 运行项目测试：
 
 ```powershell
@@ -252,9 +402,9 @@ python -m unittest discover -s tests
 ## PaperSpine 试图避免的问题
 
 - 只改句子，不改论文逻辑。
-- 把期刊、会议、课程报告、综述、比赛论文都按同一种风格写。
-- 没确认动机就开始写。
-- 添加没有证据支持的 claim。
+- 把期刊、会议、课程报告、综述、竞赛论文都按同一种风格写。
+- 没确认 motivation 就开始写。
+- 添加没有证据支撑的 claim。
 - 只输出 `main.tex`，但不解释为什么这样设计文章。
 - 用户要求翻译包时，只翻译一部分中间产物。
 

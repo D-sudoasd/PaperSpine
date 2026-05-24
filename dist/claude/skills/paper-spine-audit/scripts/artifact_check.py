@@ -5,9 +5,18 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
+
+from _paper_spine_utils import (
+    is_separator_row,
+    markdown_tables,
+    split_table_line,
+    table_rows,
+    year_from_row,
+)
 
 
 WORKFLOWS = ("rewrite_existing", "build_from_materials")
@@ -25,6 +34,7 @@ COMMON = (
     "style_profile.md",
     "sota_gap_map.md",
     "motivation_options_after_research.md",
+    "citation_support_bank.md",
     "confirmed_motivation.md",
     "section_blueprints.md",
     "writing_rationale_matrix.md",
@@ -64,6 +74,7 @@ TRANSLATION_COMMON = (
     "translation_zh/style_profile.zh.md",
     "translation_zh/sota_gap_map.zh.md",
     "translation_zh/motivation_options_after_research.zh.md",
+    "translation_zh/citation_support_bank.zh.md",
     "translation_zh/confirmed_motivation.zh.md",
     "translation_zh/section_blueprints.zh.md",
     "translation_zh/writing_rationale_matrix.zh.md",
@@ -137,6 +148,9 @@ RATIONALE_MIN_ROWS = 8
 RATIONALE_MIN_CHARS = 320
 FRAMEWORK_MIN_CHARS = 500
 TRANSLATION_MIN_RATIO = 0.30
+CITATION_BANK_MULTIPLIER = 3
+CITATION_BANK_RECENT_RATIO = 0.80
+CURRENT_YEAR = 2026
 
 TRANSLATION_SOURCE_BY_TARGET = {
     "translation_zh/paper_spine_config.zh.md": "paper_spine_config.md",
@@ -147,6 +161,7 @@ TRANSLATION_SOURCE_BY_TARGET = {
     "translation_zh/style_profile.zh.md": "style_profile.md",
     "translation_zh/sota_gap_map.zh.md": "sota_gap_map.md",
     "translation_zh/motivation_options_after_research.zh.md": "motivation_options_after_research.md",
+    "translation_zh/citation_support_bank.zh.md": "citation_support_bank.md",
     "translation_zh/confirmed_motivation.zh.md": "confirmed_motivation.md",
     "translation_zh/section_blueprints.zh.md": "section_blueprints.md",
     "translation_zh/writing_rationale_matrix.zh.md": "writing_rationale_matrix.md",
@@ -287,35 +302,6 @@ def is_generic_cell(text: str) -> bool:
     return normalize(text).strip(" .。:：") in GENERIC_CELL_VALUES
 
 
-def split_table_line(line: str) -> list[str]:
-    return [cell.strip() for cell in line.strip().strip("|").split("|")]
-
-
-def is_separator_row(cells: list[str]) -> bool:
-    if not cells:
-        return False
-    return all(cell and set(cell) <= {"-", ":", " "} for cell in cells)
-
-
-def markdown_tables(text: str) -> list[list[list[str]]]:
-    tables: list[list[list[str]]] = []
-    current: list[list[str]] = []
-    for raw in text.splitlines():
-        line = raw.strip()
-        if line.startswith("|") and line.endswith("|"):
-            cells = split_table_line(line)
-            if is_separator_row(cells):
-                continue
-            current.append(cells)
-        else:
-            if current:
-                tables.append(current)
-                current = []
-    if current:
-        tables.append(current)
-    return tables
-
-
 def header_has(header: list[str], alternatives: tuple[str, ...]) -> bool:
     joined = " ".join(normalize(cell) for cell in header)
     return any(term in joined for term in alternatives)
@@ -449,6 +435,64 @@ def table_row_count(text: str) -> int:
     return len([row for row in rows if any(cell.strip() for cell in row)])
 
 
+def find_citation_table(text: str) -> tuple[list[str], list[list[str]]] | None:
+    for table in markdown_tables(text):
+        if not table:
+            continue
+        header = table[0]
+        joined = " ".join(normalize(cell) for cell in header)
+        has_reference = any(term in joined for term in ("citation", "reference", "bibtex"))
+        if has_reference and "claim" in joined and "sentence" in joined:
+            return header, table[1:]
+    return None
+
+
+def validate_citation_support_bank(output_dir: Path, config: dict[str, object]) -> list[str]:
+    path = output_dir / "citation_support_bank.md"
+    if not path.exists():
+        return []
+    issues: list[str] = []
+    try:
+        target_count = max(1, int(config.get("citation_target_count") or 20))
+    except (TypeError, ValueError):
+        target_count = 20
+    required_candidates = target_count * CITATION_BANK_MULTIPLIER
+    required_recent = int(required_candidates * CITATION_BANK_RECENT_RATIO + 0.999)
+    recent_threshold = CURRENT_YEAR - 3
+
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    table = find_citation_table(text)
+    if table is None:
+        return [
+            "citation_support_bank.md must contain a Markdown table with reference/citation, claim, and sentence columns."
+        ]
+    _, rows = table
+    rows = [row for row in rows if any(cell.strip() for cell in row)]
+    if len(rows) < required_candidates:
+        issues.append(
+            f"citation_support_bank.md has fewer than {required_candidates} candidates; create 3x the target citation count before selecting final citations."
+        )
+    recent_rows = [row for row in rows if (year_from_row(row) or 0) >= recent_threshold]
+    if len(recent_rows) < required_recent:
+        issues.append(
+            f"citation_support_bank.md should keep about 80% recent candidates since {recent_threshold}; found {len(recent_rows)} of required {required_recent}."
+        )
+    weak_rows = []
+    for index, row in enumerate(rows[:required_candidates], start=1):
+        joined = " ".join(row)
+        has_reference = any(token in joined for token in ("@", "doi", "DOI", "http", "arXiv", "Journal", "Proceedings"))
+        has_sentence = len(joined) >= 80 and bool(re.search(r"[.!?。！？]", joined))
+        if not has_reference or not has_sentence:
+            weak_rows.append(index)
+    if weak_rows:
+        issues.append(
+            "citation_support_bank.md rows must pair each paper with one or two usable support sentences; weak rows include "
+            + ", ".join(str(row) for row in weak_rows[:8])
+            + "."
+        )
+    return issues
+
+
 def validate_translation_package(output_dir: Path, required: list[str]) -> list[str]:
     issues: list[str] = []
     coverage_path = output_dir / "translation_zh" / "translation_coverage.md"
@@ -491,9 +535,10 @@ def validate_translation_package(output_dir: Path, required: list[str]) -> list[
     return issues
 
 
-def validate_content(output_dir: Path, required: list[str], translation_required: bool) -> list[str]:
+def validate_content(output_dir: Path, required: list[str], translation_required: bool, config: dict[str, object]) -> list[str]:
     issues: list[str] = []
     issues.extend(validate_writing_rationale_matrix(output_dir))
+    issues.extend(validate_citation_support_bank(output_dir, config))
     if translation_required:
         issues.extend(validate_translation_package(output_dir, required))
     return issues
@@ -512,7 +557,7 @@ def check(
         workflow, output_dir, config, pdf_policy, word_policy, tex_engine
     )
     missing = [name for name in required if not (output_dir / name).exists()]
-    content_issues = validate_content(output_dir, required, translation_required)
+    content_issues = validate_content(output_dir, required, translation_required, config)
     return CheckResult(
         output_dir=str(output_dir),
         workflow=workflow,

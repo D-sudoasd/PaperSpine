@@ -1,6 +1,6 @@
 ---
 allowed-tools: Bash(powershell:*), Bash(powershell.exe:*), Bash(pwsh:*), Bash(cmd:*)
-description: Legacy alias for launching the PaperSpine intake wizard
+description: DEPRECATED — use /paperspine instead. Legacy manual intake launcher.
 ---
 
 Launch the PaperSpine intake UI for the current project.

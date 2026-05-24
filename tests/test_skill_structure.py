@@ -7,12 +7,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SUITE_SKILLS = [
     "paper-spine",
+    "paper-spine-ui",
     "paper-spine-intake",
     "paper-spine-research",
+    "paper-spine-citation",
     "paper-spine-rewrite",
     "paper-spine-build",
     "paper-spine-latex",
     "paper-spine-audit",
+    "paper-spine-translate",
+    "paper-spine-update",
 ]
 
 
@@ -35,10 +39,23 @@ class SkillStructureTests(unittest.TestCase):
             "src/scripts/intake_wizard.py",
             "src/scripts/material_inventory.py",
             "src/scripts/artifact_check.py",
+            "src/scripts/reference_inventory.py",
+            "src/scripts/citation_bank_check.py",
             "src/scripts/word_guard.py",
             "src/scripts/sync_local_installs.py",
-            "src/scripts/tui_preview_server.py",
+            "src/scripts/paperspine_update.py",
+            "src/scripts/_paper_spine_utils.py",
+            "src/scripts/integrity_audit.py",
+            "src/scripts/citation_quality_audit.py",
+            "src/scripts/structured_review.py",
+            "src/scripts/translate_guard.py",
+            "dist/paperspine_version.json",
+            "src/references/local-reference-ingestion.md",
+            "src/references/citation-support-bank.md",
+            "src/references/orchestrator-branch-map.md",
             "dist/codex/paper-spine/SKILL.md",
+            "dist/codex/skills/paper-spine/SKILL.md",
+            "dist/openclaw/skills/paper-spine/SKILL.md",
             "dist/claude/commands/paperspine.md",
         ]
         missing = [path for path in required if not (ROOT / path).exists()]
@@ -56,18 +73,28 @@ class SkillStructureTests(unittest.TestCase):
             self.assertIn("[中文](README.zh-CN.md)", text)
             for fragment in [
                 "dist/codex/paper-spine",
+                "dist/codex/skills",
                 "dist/claude/skills",
                 "dist/claude/commands",
+                "dist/openclaw/skills",
                 "install.ps1",
+                "paper-spine-ui",
                 "paper-spine-intake",
                 "paper-spine-research",
+                "paper-spine-citation",
                 "paper-spine-rewrite",
                 "paper-spine-build",
                 "paper-spine-latex",
                 "paper-spine-audit",
+                "paper-spine-translate",
+                "paper-spine-update",
                 "writing_rationale_matrix.md",
+                "citation_support_bank.md",
+                "reference_mode",
                 "translation_package",
                 "artifact_check.py",
+                "reference_inventory.py",
+                "citation_bank_check.py",
                 "latex_guard.py",
                 "word_guard.py",
             ]:
@@ -84,26 +111,49 @@ class SkillStructureTests(unittest.TestCase):
             if not (ROOT / "dist" / "claude" / "skills" / name / "SKILL.md").exists()
         ]
         self.assertEqual(missing, [])
+        for host in ("codex", "openclaw"):
+            missing = [
+                name
+                for name in SUITE_SKILLS
+                if not (ROOT / "dist" / host / "skills" / name / "SKILL.md").exists()
+            ]
+            self.assertEqual(missing, [])
 
     def test_suite_support_files_exist(self) -> None:
         required = [
             "dist/claude/skills/paper-spine-intake/scripts/intake_wizard.py",
+            "dist/claude/skills/paper-spine-ui/scripts/intake_wizard.py",
+            "dist/claude/skills/paper-spine-ui/scripts/launch_paperspine_ui.ps1",
             "dist/claude/skills/paper-spine/scripts/intake_wizard.py",
             "dist/claude/skills/paper-spine/scripts/material_inventory.py",
             "dist/claude/skills/paper-spine/scripts/artifact_check.py",
             "dist/claude/skills/paper-spine-build/scripts/material_inventory.py",
+            "dist/claude/skills/paper-spine-research/scripts/reference_inventory.py",
+            "dist/claude/skills/paper-spine-citation/scripts/citation_bank_check.py",
             "dist/claude/skills/paper-spine-audit/scripts/artifact_check.py",
+            "dist/claude/skills/paper-spine-audit/scripts/citation_bank_check.py",
             "dist/claude/skills/paper-spine-latex/scripts/word_guard.py",
             "dist/claude/skills/paper-spine-audit/scripts/word_guard.py",
+            "dist/claude/skills/paper-spine/references/orchestrator-branch-map.md",
             "dist/claude/skills/paper-spine-research/references/flash-pro-research.md",
+            "dist/claude/skills/paper-spine-research/references/local-reference-ingestion.md",
             "dist/claude/skills/paper-spine-research/references/scenario-journal.md",
             "dist/claude/skills/paper-spine-research/references/scenario-conference.md",
             "dist/claude/skills/paper-spine-research/references/scenario-report-review.md",
             "dist/claude/skills/paper-spine-research/references/scenario-competition.md",
+            "dist/claude/skills/paper-spine-citation/references/citation-support-bank.md",
             "dist/claude/skills/paper-spine-build/references/build-from-materials.md",
             "dist/claude/skills/paper-spine-intake/references/interactive-intake.md",
             "dist/claude/skills/paper-spine/references/writing-rationale-matrix.md",
             "dist/claude/skills/paper-spine-audit/references/translation-package.md",
+            "dist/claude/skills/paper-spine-update/scripts/paperspine_update.py",
+            "dist/claude/skills/paper-spine-update/paperspine_version.json",
+            "dist/codex/skills/paper-spine-citation/scripts/citation_bank_check.py",
+            "dist/codex/skills/paper-spine-update/scripts/paperspine_update.py",
+            "dist/codex/skills/paper-spine-research/scripts/reference_inventory.py",
+            "dist/openclaw/skills/paper-spine-citation/scripts/citation_bank_check.py",
+            "dist/openclaw/skills/paper-spine-update/scripts/paperspine_update.py",
+            "dist/openclaw/skills/paper-spine-research/scripts/reference_inventory.py",
         ]
         missing = [path for path in required if not (ROOT / path).exists()]
         self.assertEqual(missing, [])
@@ -129,6 +179,8 @@ class SkillStructureTests(unittest.TestCase):
                 continue
             if path.name == "test_skill_structure.py":
                 continue
+            if path.name == "CLAUDE.md":
+                continue
             if ".git" in path.parts:
                 continue
             if "paper_rewriting_output" in path.parts:
@@ -141,9 +193,9 @@ class SkillStructureTests(unittest.TestCase):
         self.assertEqual(offenders, [])
 
     def test_skill_metadata_files_have_no_utf8_bom(self) -> None:
-        files = [ROOT / "dist" / "codex" / "paper-spine" / "SKILL.md"] + [
-            ROOT / "dist" / "claude" / "skills" / name / "SKILL.md" for name in SUITE_SKILLS
-        ]
+        files = [ROOT / "dist" / "codex" / "paper-spine" / "SKILL.md"]
+        for host in ("claude", "codex", "openclaw"):
+            files.extend(ROOT / "dist" / host / "skills" / name / "SKILL.md" for name in SUITE_SKILLS)
         offenders = []
         for path in files:
             data = path.read_bytes()
@@ -151,7 +203,9 @@ class SkillStructureTests(unittest.TestCase):
                 offenders.append(str(path.relative_to(ROOT)))
         self.assertEqual(offenders, [])
     def test_frontmatter_description_is_portable(self) -> None:
-        skill_files = [ROOT / "dist" / "claude" / "skills" / name / "SKILL.md" for name in SUITE_SKILLS]
+        skill_files = []
+        for host in ("claude", "codex", "openclaw"):
+            skill_files.extend(ROOT / "dist" / host / "skills" / name / "SKILL.md" for name in SUITE_SKILLS)
         offenders: list[str] = []
         for path in skill_files:
             text = path.read_text(encoding="utf-8")

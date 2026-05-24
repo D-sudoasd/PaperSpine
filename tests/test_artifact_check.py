@@ -20,6 +20,7 @@ COMMON_ARTIFACTS = [
     "style_profile.md",
     "sota_gap_map.md",
     "motivation_options_after_research.md",
+    "citation_support_bank.md",
     "confirmed_motivation.md",
     "section_blueprints.md",
     "writing_rationale_matrix.md",
@@ -49,6 +50,7 @@ TRANSLATION_COMMON = [
     "translation_zh/style_profile.zh.md",
     "translation_zh/sota_gap_map.zh.md",
     "translation_zh/motivation_options_after_research.zh.md",
+    "translation_zh/citation_support_bank.zh.md",
     "translation_zh/confirmed_motivation.zh.md",
     "translation_zh/section_blueprints.zh.md",
     "translation_zh/writing_rationale_matrix.zh.md",
@@ -93,6 +95,24 @@ INVALID_RATIONALE_MATRIX = """# Writing Rationale Matrix
 """
 
 
+def valid_citation_bank(count: int = 60) -> str:
+    lines = [
+        "# Citation Support Bank",
+        "",
+        "| Candidate ID | Reference/BibTeX | Year | Recency | Supports Section | Support Claim Sentence | Why This Paper Fits | Source |",
+        "|---|---|---|---|---|---|---|---|",
+    ]
+    for index in range(1, count + 1):
+        year = 2023 + (index % 4)
+        lines.append(
+            f"| C{index:03d} | @article{{ref{index}, title={{Reference {index}}}, year={{{year}}}, doi={{10.0000/ref{index}}}}} | {year} | recent | Introduction/Discussion | "
+            f"Recent work {index} supports the manuscript sentence that related studies motivate this problem and justify a bounded claim. | "
+            f"It is a same-field, adjacent, foundational, benchmark, or application reference that can support one specific literature statement. | REF{index:03d} |"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
 def run_check(output_dir: Path, workflow: str, *extra_args: str) -> subprocess.CompletedProcess[str]:
     args = [
         sys.executable,
@@ -125,6 +145,12 @@ def write_artifacts(output: Path, names: list[str], config: dict[str, object]) -
             write_artifact(output, name, json.dumps(config))
         elif name == "writing_rationale_matrix.md":
             write_artifact(output, name, VALID_RATIONALE_MATRIX)
+        elif name == "citation_support_bank.md":
+            target = int(config.get("citation_target_count", 20)) if isinstance(config, dict) else 20
+            write_artifact(output, name, valid_citation_bank(target * 3))
+        elif name == "translation_zh/citation_support_bank.zh.md":
+            target = int(config.get("citation_target_count", 20)) if isinstance(config, dict) else 20
+            write_artifact(output, name, valid_citation_bank(target * 3))
         else:
             write_artifact(output, name)
 
@@ -228,6 +254,22 @@ class ArtifactCheckTests(unittest.TestCase):
                     self.assertIn("Content Issues", result.stdout)
                     self.assertIn("first data row", result.stdout)
                     self.assertIn("generic or empty", result.stdout)
+
+    def test_citation_support_bank_requires_three_x_candidates(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp)
+            config = {
+                "workflow": "rewrite_existing",
+                "tier": "flash",
+                "citation_target_count": 20,
+            }
+            write_artifacts(output, COMMON_ARTIFACTS + REWRITE_ARTIFACTS, config)
+            write_artifact(output, "citation_support_bank.md", valid_citation_bank(10))
+            write_final_tex(output)
+            result = run_check(output, "rewrite_existing", "--pdf-policy", "never")
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("citation_support_bank.md", result.stdout)
+            self.assertIn("fewer than 60", result.stdout)
 
     def test_requested_word_output_requires_docx_and_report(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

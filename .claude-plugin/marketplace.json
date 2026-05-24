@@ -11,17 +11,21 @@
       "name": "paper-spine",
       "description": "Motivation-driven paper and report writing skill suite.",
       "source": "./",
-      "version": "2.0.0-rc.2",
+      "version": "2.0.0-rc.3",
       "category": "writing",
       "homepage": "https://github.com/WUBING2023/PaperSpine",
       "skills": [
         "./dist/claude/skills/paper-spine",
+        "./dist/claude/skills/paper-spine-ui",
         "./dist/claude/skills/paper-spine-intake",
         "./dist/claude/skills/paper-spine-research",
+        "./dist/claude/skills/paper-spine-citation",
         "./dist/claude/skills/paper-spine-rewrite",
         "./dist/claude/skills/paper-spine-build",
         "./dist/claude/skills/paper-spine-latex",
-        "./dist/claude/skills/paper-spine-audit"
+        "./dist/claude/skills/paper-spine-audit",
+        "./dist/claude/skills/paper-spine-translate",
+        "./dist/claude/skills/paper-spine-update"
       ]
     }
   ]

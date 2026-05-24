@@ -82,19 +82,6 @@ If compilation fails, read the first fatal error in the log. Do not blindly rewr
 
 ## Final LaTeX Report
 
-For from-materials workflows, the final project path is standardized:
-
-```text
-paper_rewriting_output/final_paper/main.tex
-paper_rewriting_output/final_paper/paper.pdf  # when a TeX engine is available
-paper_rewriting_output/final_paper/paper.docx # optional
-paper_rewriting_output/final_paper/figures/
-```
-
-If the workflow rewrites an existing LaTeX project, the revised project may stay
-in the user's source tree, but the final response must still identify the main
-`.tex` file and compiled PDF path.
-
 Save as `paper_rewriting_output/latex_report.md`:
 
 ```markdown
@@ -127,16 +114,3 @@ Save as `paper_rewriting_output/latex_report.md`:
 - Citations resolved:
 - Known author tasks:
 ```
-
-## Optional Word Output
-
-When the user requests Word output, generate `final_paper/paper.docx` from the
-final manuscript source after LaTeX assembly. Then run:
-
-```bash
-python scripts/word_guard.py paper_rewriting_output/final_paper/paper.docx --markdown --output paper_rewriting_output/word_report.md
-```
-
-Fix failures before presenting the Word file as usable. The check is structural:
-the file must be a valid `.docx`, contain readable text, and not contain obvious
-placeholder markers.

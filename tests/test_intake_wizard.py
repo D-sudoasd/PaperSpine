@@ -13,10 +13,14 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def run_wizard(stdin: str, output_dir: Path) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    env["PYTHONUTF8"] = "1"
     return subprocess.run(
         [sys.executable, "src/scripts/intake_wizard.py", "--output-dir", str(output_dir)],
         cwd=ROOT,
+        env=env,
         text=True,
+        encoding="utf-8",
         input=stdin,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -45,13 +49,21 @@ class IntakeWizardTests(unittest.TestCase):
                     "materials",
                     "--official-url",
                     "https://example.org/rubric",
+                    "--reference-mode",
+                    "specified_paths",
+                    "--reference-path",
+                    "local_refs",
+                    "--citation-target-count",
+                    "24",
                     "--special-requirement",
                     "Keep figures",
                     "--output-dir",
                     str(output_dir),
                 ],
                 cwd=ROOT,
+                env={**os.environ, "PYTHONUTF8": "1"},
                 text=True,
+                encoding="utf-8",
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 check=False,
@@ -65,6 +77,9 @@ class IntakeWizardTests(unittest.TestCase):
             self.assertEqual(data["target_name"], "Course Report")
             self.assertEqual(data["materials_dir"], "materials")
             self.assertEqual(data["official_urls"], ["https://example.org/rubric"])
+            self.assertEqual(data["reference_mode"], "specified_paths")
+            self.assertEqual(data["reference_paths"], ["local_refs"])
+            self.assertEqual(data["citation_target_count"], 24)
             self.assertEqual(data["special_requirements"], ["Keep figures"])
             self.assertEqual(data["word_output"], "none")
             self.assertEqual(data["translation_package"], "none")
@@ -85,6 +100,9 @@ class IntakeWizardTests(unittest.TestCase):
                         "draft.tex",
                         "A clear motivation",
                         "https://example.org/guidelines",
+                        "1",
+                        ".",
+                        "20",
                         "Keep claims evidence-bound",
                         "",
                     ]
@@ -99,6 +117,9 @@ class IntakeWizardTests(unittest.TestCase):
             self.assertEqual(data["output_language"], "en")
             self.assertEqual(data["draft_path"], "draft.tex")
             self.assertEqual(data["official_urls"], ["https://example.org/guidelines"])
+            self.assertEqual(data["reference_mode"], "local_first")
+            self.assertEqual(data["reference_paths"], ["."])
+            self.assertEqual(data["citation_target_count"], 20)
             self.assertEqual(data["word_output"], "none")
             self.assertEqual(data["translation_package"], "none")
 
@@ -117,6 +138,9 @@ class IntakeWizardTests(unittest.TestCase):
                         "materials",
                         "A contest motivation",
                         "https://example.org/rules",
+                        "1",
+                        ".",
+                        "20",
                         "Use Chinese; keep figures",
                         "",
                     ]
@@ -155,13 +179,19 @@ class IntakeWizardTests(unittest.TestCase):
                     "docx",
                     "--translation-package",
                     "zh",
+                    "--reference-path",
+                    "references",
+                    "--citation-target-count",
+                    "30",
                     "--draft-path",
                     "paper.tex",
                     "--output-dir",
                     str(output_dir),
                 ],
                 cwd=ROOT,
+                env={**os.environ, "PYTHONUTF8": "1"},
                 text=True,
+                encoding="utf-8",
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 check=False,
@@ -170,6 +200,8 @@ class IntakeWizardTests(unittest.TestCase):
             data = json.loads((output_dir / "paper_spine_config.json").read_text(encoding="utf-8"))
             self.assertEqual(data["word_output"], "docx")
             self.assertEqual(data["translation_package"], "zh")
+            self.assertEqual(data["reference_paths"], ["references"])
+            self.assertEqual(data["citation_target_count"], 30)
 
     def test_interactive_wizard_displays_menu_review_and_edit_ui(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -187,6 +219,9 @@ class IntakeWizardTests(unittest.TestCase):
                         "draft.tex",
                         "A clear motivation",
                         "https://example.org/guidelines",
+                        "1",
+                        ".",
+                        "20",
                         "Keep claims evidence-bound",
                         "",
                     ]
@@ -209,6 +244,7 @@ class IntakeWizardTests(unittest.TestCase):
             config_home = Path(tmp) / "global"
             env = os.environ.copy()
             env["PAPERSPINE_CONFIG_HOME"] = str(config_home)
+            env["PYTHONUTF8"] = "1"
             result = subprocess.run(
                 [
                     sys.executable,
@@ -223,6 +259,7 @@ class IntakeWizardTests(unittest.TestCase):
                 cwd=ROOT,
                 env=env,
                 text=True,
+                encoding="utf-8",
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 check=False,
@@ -230,6 +267,39 @@ class IntakeWizardTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
             saved = json.loads((config_home / "config.json").read_text(encoding="utf-8"))
             self.assertEqual(saved["ui_language"], "en")
+
+    def test_keyboard_frame_preview_is_clean_and_structured(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "src/scripts/intake_wizard.py",
+                "--preview-keyboard-frame",
+                "--preview-width",
+                "118",
+                "--workflow",
+                "build_from_materials",
+                "--scene",
+                "competition",
+                "--tier",
+                "pro",
+            ],
+            cwd=ROOT,
+            env={**os.environ, "PYTHONUTF8": "1"},
+            text=True,
+            encoding="utf-8",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+        self.assertIn("PaperSpine", result.stdout)
+        self.assertIn("配置向导", result.stdout)
+        self.assertIn("工作流", result.stdout)
+        self.assertIn("当前值", result.stdout)
+        self.assertIn("上下切换字段", result.stdout)
+        self.assertNotIn("锟", result.stdout)
+        self.assertNotIn("鐩", result.stdout)
+        self.assertNotIn("鍏", result.stdout)
 
 
 if __name__ == "__main__":
