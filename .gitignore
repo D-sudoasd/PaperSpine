@@ -19,6 +19,16 @@ tmp_*_artifacts/
 *.synctex.gz
 *.toc
 
+# Claude Code local config
+.claude/settings.json
+
+# Auto-generated project files
+AGENTS.md
+TEST_REPORT.md
+
+# Design docs (not for distribution)
+docs/
+
 # OS/editor noise
 .DS_Store
 Thumbs.db
