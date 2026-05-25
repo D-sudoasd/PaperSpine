@@ -16,6 +16,7 @@ SUITE_SKILLS = [
     "paper-spine-latex",
     "paper-spine-audit",
     "paper-spine-translate",
+    "paper-spine-humanize",
     "paper-spine-update",
 ]
 
@@ -87,6 +88,7 @@ class SkillStructureTests(unittest.TestCase):
                 "paper-spine-latex",
                 "paper-spine-audit",
                 "paper-spine-translate",
+                "paper-spine-humanize",
                 "paper-spine-update",
                 "writing_rationale_matrix.md",
                 "citation_support_bank.md",

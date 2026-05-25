@@ -22,6 +22,7 @@ SUITE_SKILLS = [
     "paper-spine-latex",
     "paper-spine-audit",
     "paper-spine-translate",
+    "paper-spine-humanize",
     "paper-spine-update",
 ]
 
@@ -215,6 +216,7 @@ class SuiteHardeningTests(unittest.TestCase):
             "paper-spine-latex",
             "paper-spine-audit",
             "paper-spine-translate",
+            "paper-spine-humanize",
             "paper-spine-update",
             "flash",
             "pro",

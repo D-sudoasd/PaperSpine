@@ -25,6 +25,7 @@
         "./dist/claude/skills/paper-spine-latex",
         "./dist/claude/skills/paper-spine-audit",
         "./dist/claude/skills/paper-spine-translate",
+        "./dist/claude/skills/paper-spine-humanize",
         "./dist/claude/skills/paper-spine-update"
       ]
     }

@@ -28,6 +28,7 @@ PaperSpine/
         paper-spine-latex/
         paper-spine-audit/
         paper-spine-translate/
+        paper-spine-humanize/
         paper-spine-update/
       commands/                 # Claude Code slash-command 辅助入口
         paperspine.md

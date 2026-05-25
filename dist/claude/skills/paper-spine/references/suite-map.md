@@ -13,6 +13,7 @@ PaperSpine is split into task-focused skills:
 | `paper-spine-build` | build from a materials folder |
 | `paper-spine-latex` | assemble and guard LaTeX |
 | `paper-spine-translate` | produce complete translation_zh/ with row-by-row translation |
+| `paper-spine-humanize` | reduce AI detection patterns via tiered stylistic constraints |
 | `paper-spine-audit` | check completeness, integrity audit, structured review, and translation coverage |
 | `paper-spine-update` | check and update local PaperSpine installs |
 

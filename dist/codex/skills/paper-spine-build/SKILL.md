@@ -88,8 +88,8 @@ it needs its own row.
 ## Humanize Tier
 
 If `paper_spine_config.json` has `humanize_tier` set to `light`, `medium`, or
-`heavy`, read `references/humanize-tiers-{output_language}.md` before writing
-and apply the matching tier's rules throughout all writing phases.
+`heavy`, route to `paper-spine-humanize` before writing.  The humanize skill
+provides tier-specific writing constraints enforced during all prose generation.
 
 ## Build Rules
 
