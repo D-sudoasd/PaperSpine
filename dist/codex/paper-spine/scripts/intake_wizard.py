@@ -536,6 +536,7 @@ def print_welcome_screen(ui_language: str, wait: bool = False) -> None:
             ansi("X: Wbingo353332", muted),
             ansi("Douyin: 91362158854", muted),
             ansi("Xiaohongshu: 4770513150", muted),
+            ansi("Bilibili: 彬_2023 (ID: 450856661)", muted),
             "",
         ]
     )
