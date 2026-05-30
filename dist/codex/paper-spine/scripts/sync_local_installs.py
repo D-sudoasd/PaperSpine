@@ -142,7 +142,7 @@ def sync_desktop_export(desktop_root: Path) -> None:
     copy_tree(ROOT / "src", desktop_root / "src")
     copy_tree(ROOT / ".claude-plugin", desktop_root / ".claude-plugin")
     shutil.copy2(ROOT / "README.md", desktop_root / "README.md")
-    shutil.copy2(ROOT / "README.zh-CN.md", desktop_root / "README.zh-CN.md")
+    shutil.copy2(ROOT / "README.en.md", desktop_root / "README.en.md")
     shutil.copy2(ROOT / "LICENSE", desktop_root / "LICENSE")
     shutil.copy2(ROOT / "install.ps1", desktop_root / "install.ps1")
 

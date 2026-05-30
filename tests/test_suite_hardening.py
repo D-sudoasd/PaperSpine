@@ -461,7 +461,7 @@ class SuiteHardeningTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             dest = Path(tmp) / "paper-spine"
             dest.mkdir()
-            for name in ["README.md", "README.zh-CN.md", "LICENSE", ".gitignore", "install.ps1"]:
+            for name in ["README.md", "README.en.md", "LICENSE", ".gitignore", "install.ps1"]:
                 shutil.copy2(ROOT / name, dest / name)
             shutil.copytree(ROOT / ".claude-plugin", dest / ".claude-plugin")
             shutil.copytree(ROOT / "dist", dest / "dist")
