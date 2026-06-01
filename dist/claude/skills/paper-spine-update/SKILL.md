@@ -12,17 +12,20 @@ preserving settings.
 
 ## Required Behavior
 
-Run the bundled updater instead of improvising file-copy commands:
+Run the bundled updater using the full path to the installed skill:
 
+**Windows:**
 ```powershell
-python scripts/paperspine_update.py --yes
+$script = Join-Path $env:USERPROFILE ".claude\skills\paper-spine-update\scripts\paperspine_update.py"
+python $script --yes
 ```
 
-For a version check only:
-
-```powershell
-python scripts/paperspine_update.py --check-only
+**macOS / Linux:**
+```bash
+python3 ~/.claude/skills/paper-spine-update/scripts/paperspine_update.py --yes
 ```
+
+For a version check only, use `--check-only` instead of `--yes`.
 
 The updater must:
 

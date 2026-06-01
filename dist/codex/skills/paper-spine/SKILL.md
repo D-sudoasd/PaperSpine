@@ -9,6 +9,10 @@ Use this skill as the suite entrypoint. It is the main orchestrator: it routes
 the user to UI, intake, research, citation, rewrite, build, LaTeX,
 translate, humanize, audit, and update branch skills.
 
+**Update detection**: If the user asks to update, upgrade, check for updates,
+or manage the PaperSpine installation, route immediately to
+`paper-spine-update` without starting the writing workflow.
+
 ## Operating Principle
 
 PaperSpine is a research-writing workflow, not a prose patcher. Its job is to
