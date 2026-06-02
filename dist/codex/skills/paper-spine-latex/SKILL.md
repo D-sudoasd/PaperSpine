@@ -44,15 +44,23 @@ unless rewrite/build outputs require it.
 - If compilation fails despite an available engine, keep the `.tex`, write the
   first fatal error to `latex_report.md`, and do not claim the artifact check
   passes.
-- If generating Word output, use pandoc from the `final_paper/` directory:
+- If generating Word output, use pandoc from the `final_paper/` directory. When
+  the manuscript uses BibTeX citations, resolve them with citeproc so `\cite`
+  commands render as formatted references instead of leaking raw LaTeX:
   ```bash
   cd final_paper
-  pandoc main.tex -o paper.docx --from latex --to docx \
-    --resource-path=. --extract-media=./media
+  pandoc main.tex -o paper.docx --from latex --to docx \n    --resource-path=. --extract-media=./media \n    --number-sections --citeproc --bibliography=references.bib
   ```
+  - `--citeproc --bibliography=references.bib` renders `\cite{...}` and the
+    reference list; omit only when the manuscript has no citations
+  - `--number-sections` keeps headings numbered like the LaTeX source
   - `--resource-path=.` resolves `\includegraphics{figures/...}` paths
   - `--extract-media=./media` embeds images into the docx
-  - Without these flags, pandoc silently drops images and produces a blank docx
+  - For house styles (fonts, heading styles, margins), add
+    `--reference-doc=reference.docx` built from the target template
+  - `ef`/`utoref` cross-references need the `pandoc-crossref` filter
+    (`--filter pandoc-crossref`); without it they may render as `[?]`
+  - Without these flags, pandoc silently drops images or citations, or produces a blank docx
   - Run from `final_paper/` so relative paths in `.tex` resolve correctly
   - Do NOT use intermediate plain-text steps that strip encoding
 - Run `scripts/word_guard.py final_paper/paper.docx --markdown --output

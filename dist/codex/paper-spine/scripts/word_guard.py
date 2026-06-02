@@ -11,7 +11,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from xml.etree import ElementTree
 
-
 PLACEHOLDER_PATTERNS = (
     r"\bTODO\b",
     r"\bTBD\b",
@@ -20,6 +19,18 @@ PLACEHOLDER_PATTERNS = (
     r"\[\[",
     r"\]\]",
 )
+
+# LaTeX control sequences that should never survive into a finished .docx.
+# Their presence means pandoc emitted the raw source instead of rendered output.
+LATEX_COMMAND_PATTERN = re.compile(
+    r"\\(?:cite[a-zA-Z]*|ref|eqref|autoref|cref|Cref|label|textbf|textit|emph|"
+    r"section|subsection|subsubsection|begin|end|includegraphics|caption|"
+    r"footnote|item|hline|toprule|midrule|bottomrule)\b"
+)
+# pandoc citeproc leftovers, e.g. [@smith2020] — citations were never resolved.
+CITEPROC_LEFTOVER_PATTERN = re.compile(r"\[@[\w:.\-]+(?:\s*;\s*@[\w:.\-]+)*\]")
+# Inline math left as raw LaTeX (a `$...$` span that contains a backslash macro).
+RAW_MATH_PATTERN = re.compile(r"\$[^$\n]*\\[a-zA-Z]+[^$\n]*\$")
 
 
 @dataclass
@@ -92,6 +103,26 @@ def check_docx(path: Path, min_chars: int) -> WordGuardResult:
     for pattern in PLACEHOLDER_PATTERNS:
         if re.search(pattern, text, flags=re.IGNORECASE):
             findings.append(f"unresolved placeholder pattern found: {pattern}")
+
+    # Formatting correctness: raw LaTeX must not leak into the rendered docx.
+    latex_hits = sorted({m.group(0) for m in LATEX_COMMAND_PATTERN.finditer(text)})
+    if latex_hits:
+        findings.append(
+            "Unrendered LaTeX commands in text (e.g. "
+            f"{', '.join(latex_hits[:6])}) — pandoc emitted raw source instead of "
+            "rendered output. Check the conversion engine and that custom macros are defined."
+        )
+    citeproc_hits = CITEPROC_LEFTOVER_PATTERN.findall(text)
+    if citeproc_hits:
+        findings.append(
+            f"Unresolved citation markers found ({len(citeproc_hits)}, e.g. {citeproc_hits[0]}). "
+            "Run pandoc with --citeproc and --bibliography=references.bib so citations render."
+        )
+    if RAW_MATH_PATTERN.search(text):
+        findings.append(
+            "Raw inline LaTeX math (e.g. `$\\alpha$`) survived into the docx — math was not "
+            "converted to Word equations. Verify the source compiles and pandoc handled the math."
+        )
 
     # Chinese encoding checks: detect garbled text / mojibake
     has_chinese = bool(re.search(r"[一-鿿]", text))
