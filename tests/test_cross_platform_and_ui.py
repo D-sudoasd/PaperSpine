@@ -114,11 +114,17 @@ class UiAutoLaunchTests(unittest.TestCase):
         self.assertIn("description:", text)  # valid custom-prompt frontmatter
         self.assertNotIn("-File scripts/launch_paperspine_ui.ps1", text)  # absolute path only
         self.assertIn(r"$env:USERPROFILE\.codex\skills", text)
+        # Hard execution constraint: launch UI first, with escalation.
+        self.assertIn("require_escalated", text)
+        self.assertIn("FIRST tool action", text)
 
     def test_orchestrator_auto_launches_ui_when_config_missing(self) -> None:
         orch = (ROOT / "dist" / "claude" / "skills" / "paper-spine" / "SKILL.md").read_text(encoding="utf-8").lower()
         for token in ("configuration is missing", "launch", "intake", "automatically"):
             self.assertIn(token, orch, f"orchestrator must describe auto-launch ({token})")
+        # Codex hard constraint: launch UI as the first action, with escalation.
+        self.assertIn("require_escalated", orch)
+        self.assertIn("first tool", orch)
 
 
 class CrossPlatformLauncherTests(unittest.TestCase):

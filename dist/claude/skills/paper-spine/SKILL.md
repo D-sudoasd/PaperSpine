@@ -57,6 +57,15 @@ Required fields:
    available. The wizard is the supported Claude Code/Codex command-line UI.
    In Claude Code, `/paperspine` is the preferred entry: it launches the
    external intake window automatically when configuration is missing.
+
+   **Codex hard constraint (do not skip):** when
+   `paper_rewriting_output/paper_spine_config.json` is missing, the FIRST tool
+   action after reading this skill MUST be to run the absolute
+   `launch_paperspine_ui.ps1` (resolve under `~/.codex/skills/...` or
+   `~/.claude/skills/...`) with `sandbox_permissions: require_escalated` so the
+   window can open. Do NOT inspect materials, infer defaults, create config
+   files, or continue the workflow before the UI has launched or explicitly
+   failed. Only fall back to numbered/chat intake if the launch returns an error.
 2. Always create or verify `source_map.md`.
 3. Always use `paper-spine-research` before choosing the final motivation.
    Research must first index local/default references according to

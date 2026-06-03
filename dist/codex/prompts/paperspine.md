@@ -8,9 +8,13 @@ orchestrator** skill. Route through `$paper-spine`; do not call the worker
 sub-skills directly unless the orchestrator tells you to.
 
 If `paper_rewriting_output/paper_spine_config.json` is missing or incomplete,
-launch the PaperSpine intake UI automatically (do not hand-write the config).
-Resolve the launcher by its absolute installed path — Codex runs from the
-project folder, where `scripts/` does not exist.
+your FIRST tool action MUST be to run the launcher below with
+`sandbox_permissions: require_escalated` (opening a visible window is an
+escalated action in Codex; without it the window will not reliably appear). Do
+NOT inspect materials, infer defaults, create config files, or continue the
+workflow before the UI has launched or explicitly failed. Resolve the launcher
+by its absolute installed path — Codex runs from the project folder, where
+`scripts/` does not exist. Only fall back to numbered/chat intake on launch error.
 
 ### Windows
 

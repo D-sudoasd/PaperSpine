@@ -18,7 +18,10 @@ hidden tool surface when the host cannot expose stdin.
 In Claude Code, `/paperspine` must call this branch automatically when config is
 missing.
 
-In Codex, use the same launcher when PowerShell is available:
+In Codex, launching this window opens a visible GUI/terminal, which Codex treats
+as an escalated action — request it with `sandbox_permissions: require_escalated`,
+or the window will not reliably appear. Launch the UI as the first action when
+config is missing; do not infer config from materials instead.
 
 ```powershell
 # Pass the ABSOLUTE path to the installed launcher. Codex/Claude run from the
