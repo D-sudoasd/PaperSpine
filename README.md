@@ -9,6 +9,8 @@
 
 [**PaperSpine 使用讲解视频（Bilibili）**](https://www.bilibili.com/video/BV1rjVa6ZEYu)
 
+[**🌍 订阅者星图 · 看看哪些高校和城市在用 PaperSpine**](https://wubing2023.github.io/PaperSpine/)
+
 
 > PaperSpine 是一个面向 Codex、Claude Code 和 OpenClaw 的、以 motivation 为主线的论文与报告写作 skill suite。
 

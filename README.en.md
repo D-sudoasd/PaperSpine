@@ -9,6 +9,8 @@
 
 [**PaperSpine 使用讲解视频（Bilibili）**](https://www.bilibili.com/video/BV1rjVa6ZEYu)
 
+[**🌍 Stargazer Atlas · see which universities and cities use PaperSpine**](https://wubing2023.github.io/PaperSpine/)
+
 
 PaperSpine is a motivation-driven paper and report writing skill suite for Codex, Claude Code, and OpenClaw.
 
