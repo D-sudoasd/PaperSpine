@@ -257,6 +257,24 @@ def check_citation_format(text: str) -> list[Finding]:
             line,
         ))
 
+    # Find rendered author-year citations: (Smith, 2020), (Jones and Lee, 2021),
+    # (Brown et al., 2019). The hard rule is plain numeric [1]; author-year is
+    # forbidden. Require a comma before the year so prose like "(see Section 2)"
+    # or "(in 2020)" is not flagged.
+    author_year_pattern = re.compile(
+        r"\(\s*[A-Z][A-Za-z.'’\-]+"
+        r"(?:\s+et\s+al\.?|\s+and\s+[A-Z][A-Za-z.'’\-]+|\s*&\s*[A-Z][A-Za-z.'’\-]+)?"
+        r",\s*\d{4}[a-z]?\s*\)"
+    )
+    for match in author_year_pattern.finditer(body_no_math):
+        line = line_number(text, doc_start + match.start())
+        findings.append(Finding(
+            "error", "citation-format",
+            f"Author-year citation {match.group(0).strip()} is not allowed. Use plain "
+            "square-bracket numeric citations, e.g. [1].",
+            line,
+        ))
+
     return findings
 
 

@@ -33,6 +33,26 @@ class ScriptSmokeTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
         self.assertIn("Errors: 0", result.stdout)
 
+    def test_latex_guard_flags_author_year_citation(self) -> None:
+        # Regression: SKILL.md and references/latex.md say latex_guard rejects
+        # author-year citations; it must actually fire on (Name, Year) in the body.
+        with tempfile.TemporaryDirectory() as tmp:
+            tex = Path(tmp) / "ay.tex"
+            tex.write_text(
+                r"""\documentclass{article}
+\title{Author Year Citation Test}
+\begin{document}
+\maketitle
+\section{Introduction}
+Prior work (Smith et al., 2019) and (Jones and Lee, 2021) studied this problem.
+\end{document}
+""",
+                encoding="utf-8",
+            )
+            result = run_script("src/scripts/latex_guard.py", str(tex), "--markdown")
+            self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+            self.assertIn("Author-year citation", result.stdout)
+
     def test_style_metrics_reports_sections(self) -> None:
         result = run_script("src/scripts/style_metrics.py", str(FIXTURES / "mini_paper.tex"), "--markdown")
         self.assertEqual(result.returncode, 0, result.stderr + result.stdout)

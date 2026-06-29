@@ -195,6 +195,13 @@ class ValidateRepoTests(unittest.TestCase):
         manifest = updater.validate_repo(ROOT)
         self.assertIn("version", manifest)
 
+    def test_update_reference_points_to_installed_script_path(self) -> None:
+        """update.md must reference the real installed path, not the legacy skill."""
+        doc = (ROOT / "src" / "skill" / "references" / "update.md").read_text(encoding="utf-8")
+        self.assertNotIn("paper-spine-update", doc)
+        self.assertIn(r"paper-spine\scripts\paperspine_update.py", doc)
+        self.assertIn("paper-spine/scripts/paperspine_update.py", doc)
+
     def test_resolve_claude_settings_dir_honors_env_override(self) -> None:
         """The overrides cleanup must never touch the real ~/.claude."""
         updater = self._import_updater()

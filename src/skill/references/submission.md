@@ -138,7 +138,7 @@ checklist.
 ## Word Output
 
 Generate Word files for the deliverables required by the configured language
-(see "Default outputs" above). For a default English-only run that is:
+(see "Output Directory" above). For a default English-only run that is:
 
 ```text
 paper_rewriting_output/submission_package/cover_letter.en.docx

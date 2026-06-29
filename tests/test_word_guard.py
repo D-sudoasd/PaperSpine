@@ -255,6 +255,33 @@ class WordGuardTests(unittest.TestCase):
             result = run_guard(docx, min_chars=50)
             self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
 
+    def test_author_year_citation_without_tex_fails(self) -> None:
+        # Regression: a docx rendered author-year with no source .tex used to pass
+        # silently. The skill's default rule is plain numeric [1].
+        with tempfile.TemporaryDirectory() as tmp:
+            docx = Path(tmp) / "paper.docx"
+            make_docx(docx, [
+                "We build on prior work (Smith et al., 2020) to improve the baseline accuracy. " * 6,
+            ])
+            result = run_guard(docx, min_chars=50)
+            self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+            self.assertIn("Author-year citation", result.stdout)
+
+    def test_docx_starting_with_abstract_without_title_fails(self) -> None:
+        # Regression: word_guard used to skip past a leading 'Abstract' wrapper and
+        # accept the abstract body as the title. The Word output must OPEN with the title.
+        with tempfile.TemporaryDirectory() as tmp:
+            docx = Path(tmp) / "paper.docx"
+            make_docx(docx, [
+                "Abstract",
+                "This work studies trajectory alignment for efficient diffusion model distillation. " * 6,
+                "Introduction",
+                "Diffusion models are expensive to deploy in production settings at scale. " * 6,
+            ])
+            result = run_guard(docx, min_chars=50)
+            self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+            self.assertIn("section/wrapper heading", result.stdout)
+
     def test_fix_fonts_temp_is_beside_docx_not_cross_drive(self) -> None:
         # Regression: fix_docx_fonts must create its temp in the docx's OWN dir.
         # A system-temp temp + os.replace fails across drives on Windows

@@ -22,10 +22,45 @@ Chinese doc deliverable. The user-facing result is `paper.zh.docx`.
 
 ### Phase 1 - Inventory
 
-List every file to translate. Write `translation_zh/manifest.md`.
+List every file to translate. Write `translation_zh/manifest.md`. `translate_guard.py`
+demands the exact set below (every file lives under `translation_zh/`); a missing
+file is a BLOCKER.
 
-Common files for both workflows include `writing_rationale_matrix.md`,
-`citation_support_bank.md`, all research outputs, and the final paper text.
+Common files (required for both workflows):
+
+- `manifest.md`
+- `translation_coverage.md`
+- `paper_spine_config.zh.md`
+- `source_map.zh.md`
+- `reference_materials/source_index.zh.md`
+- `research_dossier.zh.md`
+- `exemplar_learning_dossier.zh.md`
+- `style_profile.zh.md`
+- `sota_gap_map.zh.md`
+- `motivation_options_after_research.zh.md`
+- `confirmed_motivation.zh.md`
+- `section_blueprints.zh.md`
+- `writing_rationale_matrix.zh.md`
+- `citation_support_bank.zh.md`
+- `final_structure.zh.md`
+- `final_paper.zh.md`
+- `full_paper_translation.zh.md`
+- `latex_report.zh.md`
+- `final_artifact_manifest.zh.md`
+- `artifact_check.zh.md`
+
+Additional files for the `rewrite_existing` workflow:
+
+- `original_logic_map.zh.md`
+- `rewrite_matrix.zh.md`
+- `logic_transfer_audit.zh.md`
+
+Additional files for the `build_from_materials` workflow:
+
+- `source_inventory.zh.md`
+- `evidence_bank.zh.md`
+- `figure_asset_map.zh.md`
+- `claim_register.zh.md`
 
 ### Phase 2 - Translate
 

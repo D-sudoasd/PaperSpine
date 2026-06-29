@@ -11,13 +11,13 @@ config.
 
 Windows:
 ```powershell
-$script = Join-Path $env:USERPROFILE ".claude\skills\paper-spine-update\scripts\paperspine_update.py"
+$script = Join-Path $env:USERPROFILE ".claude\skills\paper-spine\scripts\paperspine_update.py"
 python $script --yes
 ```
 
 macOS / Linux:
 ```bash
-python3 ~/.claude/skills/paper-spine-update/scripts/paperspine_update.py --yes
+python3 ~/.claude/skills/paper-spine/scripts/paperspine_update.py --yes
 ```
 
 For version check only: `--check-only` instead of `--yes`.

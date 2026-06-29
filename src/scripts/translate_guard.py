@@ -94,6 +94,26 @@ FULL_PAPER_SECTIONS = [
     "caption", "limitation", "acknowledgement", "appendix",
 ]
 
+# A section counts as covered if any of its synonyms (English OR Chinese) appears
+# in the translation. Without this, a complete natural Chinese translation matches
+# none of the English keywords and is wrongly reported as missing every section.
+SECTION_SYNONYMS: dict[str, list[str]] = {
+    "title": ["title", "标题", "题目"],
+    "abstract": ["abstract", "摘要"],
+    "introduction": ["introduction", "引言", "绪论", "导论", "介绍"],
+    "method": ["method", "approach", "方法", "模型", "算法"],
+    "experiment": ["experiment", "实验", "评测", "评估"],
+    "result": ["result", "结果", "性能"],
+    "discussion": ["discussion", "讨论", "分析"],
+    "conclusion": ["conclusion", "结论", "总结"],
+    "figure": ["figure", "fig.", "图"],
+    "table": ["table", "表"],
+    "caption": ["caption", "图注", "表注", "图 ", "表 "],
+    "limitation": ["limitation", "局限", "不足", "限制"],
+    "acknowledgement": ["acknowledgement", "acknowledgment", "致谢", "鸣谢"],
+    "appendix": ["appendix", "附录"],
+}
+
 MIN_DENSITY_RATIO = 0.50  # Chinese translation must be at least 50% of English source chars
 
 # ---------------------------------------------------------------------------
@@ -306,7 +326,13 @@ def check_full_paper_coverage(trans_dir: Path, out_dir: Path) -> list[Translatio
     covered = []
     missing_sections = []
     for section in FULL_PAPER_SECTIONS:
-        if section in heading_text or section in text_lower:
+        synonyms = SECTION_SYNONYMS.get(section, [section])
+        # The title is normally the document's H1 rather than a literal "title"
+        # heading, so any heading at all satisfies it.
+        if section == "title" and headings:
+            covered.append(section)
+            continue
+        if any(s in heading_text or s in text_lower for s in synonyms):
             covered.append(section)
         else:
             missing_sections.append(section)

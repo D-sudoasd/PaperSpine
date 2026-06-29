@@ -66,6 +66,12 @@ MARKDOWN_ITALIC_PATTERN = re.compile(r"(?<![a-zA-Z0-9_])\*[a-zA-Z][^*\n]*[a-zA-Z
 NUMERIC_BIB_STYLES = frozenset({
     "plain", "unsrt", "abbrv", "ieeetr", "ieee", "ieeetran", "acm", "siam", "vancouver",
 })
+# Styles that legitimately render (Author, Year). When the source declares one of
+# these, author-year citations in the Word output are correct and must not be flagged.
+AUTHOR_DATE_BIB_STYLES = frozenset({
+    "plainnat", "abbrvnat", "unsrtnat", "agsm", "apa", "apalike", "apacite",
+    "chicago", "authordate", "harvard", "dinat", "kluwer", "nature",
+})
 BIBSTYLE_PATTERN = re.compile(r"\\bibliographystyle\{([^}]+)\}")
 NUMERIC_CITE_PATTERN = re.compile(r"\[\d+(?:\s*[,–-]\s*\d+)*\]")
 AUTHOR_DATE_CITE_PATTERN = re.compile(r"\([A-Z][A-Za-z'’.-]+(?:\s+et al\.?)?,?\s+\d{4}[a-z]?\)")
@@ -91,6 +97,36 @@ def citation_style_finding(docx_text: str, source_tex: str) -> str | None:
             "(e.g. --csl=ieee.csl) so Word matches the PDF's [1] style."
         )
     return None
+
+
+def author_year_citation_finding(docx_text: str, source_tex: str) -> str | None:
+    """Flag author-year citations in the Word output unless the source is author-date.
+
+    PaperSpine's default rule (SKILL.md / references/latex.md) is plain numeric
+    [1] citations. word_guard previously only caught author-year when a numeric
+    \\bibliographystyle was supplied, so a docx rendered without any source tex
+    passed silently. This fires whenever (Author, Year) citations appear and the
+    source is NOT a known author-date style. Numeric-style sources are left to
+    citation_style_finding, which carries a more specific message.
+    """
+    match = AUTHOR_DATE_CITE_PATTERN.search(docx_text)
+    if not match:
+        return None
+    style = ""
+    if source_tex:
+        bib = BIBSTYLE_PATTERN.search(source_tex)
+        if bib:
+            style = bib.group(1).strip().lower()
+    if style in AUTHOR_DATE_BIB_STYLES:
+        return None  # author-date is legitimate here
+    if style in NUMERIC_BIB_STYLES:
+        return None  # citation_style_finding owns this case
+    return (
+        f"Author-year citation found in the Word output (e.g. '{match.group(0)}'). "
+        "PaperSpine's default rule is plain square-bracket numeric citations, e.g. [1]. "
+        "Render with a numeric CSL (e.g. --csl=ieee.csl) or pass --tex so an author-date "
+        "\\bibliographystyle can be recognized; otherwise convert the citations to numeric form."
+    )
 
 
 GLUED_HEADING_NUMBER_PATTERN = re.compile(
@@ -281,6 +317,27 @@ def check_title_in_front(paragraphs: list[str], expected_title: str | None = Non
 
     front = paragraphs[:5]
 
+    # If the expected title is known and present in the front paragraphs, the
+    # title is satisfied regardless of ordering.
+    if expected_title:
+        front_text = " ".join(front).lower()
+        if expected_title.lower().strip() in front_text:
+            return None, first_para
+
+    # The Word output must OPEN with the paper title. If the very first paragraph
+    # is itself a short section/wrapper heading (Abstract, Keywords, Introduction,
+    # 摘要…) there is no title in front and we flag it. The length bound keeps a
+    # legitimate title that merely starts with a section-like word
+    # (e.g. "Introduction to Spectral Methods for Graph Learning") from being
+    # falsely rejected.
+    first_lower = first_para.strip().lower()
+    if any(first_lower.startswith(f) for f in TITLE_FORBIDDEN_STARTS) and len(first_para.strip()) <= 40:
+        return (
+            f"Word output begins with '{first_para.strip()[:60]}', a section/wrapper "
+            "heading, not the paper title. The paper title must appear on the first "
+            "page before Abstract/Keywords/Introduction."
+        ), first_para
+
     # Advance past any leading wrapper/forbidden paragraphs to find the candidate title.
     candidate_idx = 0
     for i, para in enumerate(front):
@@ -306,12 +363,8 @@ def check_title_in_front(paragraphs: list[str], expected_title: str | None = Non
             f"'{candidate[:80]}'"
         ), first_para
 
-    # If an expected title is provided, verify it appears in the front paragraphs.
+    # An expected title was provided but not found in the front paragraphs above.
     if expected_title:
-        front_text = " ".join(front).lower()
-        title_lower = expected_title.lower().strip()
-        if title_lower in front_text:
-            return None, first_para
         return (
             f"Expected title '{expected_title[:80]}' not found in first 5 paragraphs. "
             f"First non-wrapper paragraph: '{candidate[:80]}'"
@@ -834,6 +887,10 @@ def check_docx(
     style_finding = citation_style_finding(text, source_tex)
     if style_finding:
         findings.append(style_finding)
+
+    author_year_finding = author_year_citation_finding(text, source_tex)
+    if author_year_finding:
+        findings.append(author_year_finding)
 
     fonts = font_profile(path, text, language)
     findings.extend(fonts.findings)
