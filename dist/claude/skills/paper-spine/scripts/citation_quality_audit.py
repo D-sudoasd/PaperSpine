@@ -489,7 +489,20 @@ def audit_citations(output_dir: Path, no_api: bool, timeout: int, delay: float, 
             continue
 
         if no_api:
-            entry.resolvability_score = 50
+            # Offline: a DOI is itself a stable, re-checkable identifier. Honor the
+            # bank's verification columns instead of forcing every DOI row to pending,
+            # so a properly verified bank can pass structural-only (--no-api) analysis.
+            entry.manual_identifier = entry.doi
+            if has_manual_verification(record):
+                entry.status = "verified"
+                entry.doi_resolves = True  # structurally verifiable, not network-confirmed
+                entry.resolvability_score = 80
+                entry.teaching_note = (
+                    "Offline mode: DOI present and the bank records Verified=yes with a specific "
+                    "note. Accepted as structurally verifiable (not network-confirmed)."
+                )
+            else:
+                entry.resolvability_score = 50
             report.entries.append(entry)
             continue
 
@@ -555,7 +568,7 @@ def audit_citations(output_dir: Path, no_api: bool, timeout: int, delay: float, 
         if ratio < 0.05 and ctype != "critique":
             report.gap_analysis[ctype] = (
                 f"**Missing {label}s.** Only {count} of {total} entries ({ratio:.0%}). "
-                f"{guidance} Consider adding 1-3 {label} papers."
+                f"{guidance} Consider adding 1-3 {label} references."
             )
 
     # ---- replacement recommendations for dead citations ----

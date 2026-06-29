@@ -666,6 +666,8 @@ def to_markdown(result: CitationVerificationResult) -> str:
 # ---------------------------------------------------------------------------
 
 def main() -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")  # parity with citation_quality_audit on Windows
     args = parse_args()
     bank_path = Path(args.bank_path)
     result = verify_citation(

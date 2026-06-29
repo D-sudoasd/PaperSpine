@@ -132,7 +132,7 @@ class ModuleApiTests(unittest.TestCase):
             )
             result = subprocess.run(
                 [sys.executable, str(SCRIPT), str(bank), "--no-api", "--json"],
-                cwd=ROOT, text=True, stdout=subprocess.PIPE,
+                cwd=ROOT, text=True, encoding="utf-8", stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE, check=False,
             )
             # --no-api never touches the network and never fails the run.

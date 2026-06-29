@@ -7,6 +7,7 @@ import argparse
 import json
 import re
 import shutil
+import sys
 import tempfile
 import zipfile
 from dataclasses import dataclass
@@ -533,7 +534,7 @@ def to_markdown(result: SubmissionCheckResult) -> str:
         f"- Cover letter word count: {result.cover_word_count}",
         f"- Chinese highlight count: {result.zh_highlight_count}",
         f"- Chinese cover letter word count: {result.zh_cover_word_count}",
-        f"- Valid Word files: {len(result.docx_files)}/{len(REQUIRED_DOCX)}",
+        f"- Valid Word files present: {len(result.docx_files)}",
         f"- Status: {'PASS' if result.ok else 'FAIL'}",
         "",
         "## Findings",
@@ -560,6 +561,8 @@ def to_markdown(result: SubmissionCheckResult) -> str:
 
 
 def main() -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")  # Chinese headers survive Windows cp936 console
     args = parse_args()
     output_dir = Path(args.output_dir)
     if args.fix_fonts and output_dir.exists():

@@ -60,9 +60,16 @@ def copy_tree(src: Path, dest: Path) -> None:
     shutil.copytree(src, dest, ignore=shutil.ignore_patterns("__pycache__", ".pytest_cache", "*.pyc"))
 
 
+# Build/install-only scripts that must NOT ship inside an installed skill
+# (they assume the repo's src/ layout and would crash from a dist copy).
+BUILD_ONLY_SCRIPTS = frozenset({"sync_local_installs.py"})
+
+
 def copy_scripts(dest_scripts: Path) -> None:
     dest_scripts.mkdir(parents=True, exist_ok=True)
     for f in list(SRC_SCRIPTS.glob("*.py")) + list(SRC_SCRIPTS.glob("*.sh")) + list(SRC_SCRIPTS.glob("*.ps1")):
+        if f.name in BUILD_ONLY_SCRIPTS:
+            continue
         shutil.copy2(f, dest_scripts / f.name)
 
 
