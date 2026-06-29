@@ -66,6 +66,30 @@ Never fabricate data, metrics, p-values, datasets, citations, figures, or
 experimental claims. User materials are authoritative for this paper's results.
 External examples teach structure and rhetoric only.
 
+## Contribution-First, Reviewer-Aware Rules (V4)
+
+These three rules sit above the motivation thread. Motivation remains required,
+but it supports the contribution rather than replacing it.
+
+1. **Contribution-First.** The manuscript's highest-priority organizing unit is
+   the confirmed contribution. Do not begin substantive writing until
+   `confirmed_contribution.md` exists (what the paper adds, what problem/gap/
+   challenge makes it necessary, what evidence validates it, what claim boundary
+   to respect, why a reviewer should find it publishable). Template + per-section
+   checklists: `references/contribution.md`. Gate: `contribution_check.py`.
+2. **Results-as-Validation.** Each major Results subsection must validate at least
+   one contribution promise; metric-only units with no contribution mapping are a
+   failure. Record this in `results_validation.md`. Template:
+   `references/results-validation.md`. Gate: `results_validation_check.py`
+   (journal / conference / competition scenes).
+3. **Reviewer-Aware.** Before claiming submission-ready, create `reviewer_audit.md`
+   (reviewer value map + objection register + editorial fit), populating the
+   objection register from the three `structured_review` reviewer agents. Template:
+   `references/reviewer-audit.md`. Gate: `reviewer_audit_check.py`.
+
+The Stage 12 Final Audit hard gate runs all three checks; do not declare the work
+complete while any of them fails.
+
 ## User-Facing Language
 
 When the user writes in Chinese, `ui_language=zh`, `output_language=zh`, or

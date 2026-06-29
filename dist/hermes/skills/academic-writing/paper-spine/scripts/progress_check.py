@@ -272,6 +272,19 @@ def _run_final_audit_gate(output_dir: Path, config: dict) -> tuple[bool, str, li
             if rc != 0:
                 failures.append(f"word_guard.py ({docx_rel}) exit {rc}")
 
+    # 6. Contribution-first / reviewer-aware methodology gates (V4).
+    for script in ("contribution_check.py", "reviewer_audit_check.py"):
+        rc, _stdout, _stderr = _run_script(scripts_dir, script, [str(output_dir), "--markdown", "--write"])
+        if rc != 0:
+            failures.append(f"{script} exit {rc}")
+    # Results-as-Validation applies only to evidence-bearing scenes.
+    if str(config.get("scene") or "").lower() in ("journal", "conference", "competition"):
+        rc, _stdout, _stderr = _run_script(
+            scripts_dir, "results_validation_check.py", [str(output_dir), "--markdown", "--write"]
+        )
+        if rc != 0:
+            failures.append(f"results_validation_check.py exit {rc}")
+
     if failures:
         return False, (
             f"GATE FAILED: Final Audit - {len(failures)} script(s) failed: {', '.join(failures)}"
