@@ -11,17 +11,35 @@ Write all submission materials under:
 paper_rewriting_output/submission_package/
 ```
 
-Default outputs:
+Outputs depend on `output_language` and `translation_package` in
+`paper_spine_config.json` (read from the submission package directory or its
+parent). The default run is English-only, so by default only the `*.en.*`
+files are produced.
 
-- `cover_letter.en.docx`
-- `cover_letter.zh.docx`
-- `highlights.en.docx`
-- `highlights.zh.docx`
+English deliverables (produced unless the run is Chinese-only,
+`output_language: zh`):
+
 - `cover_letter.en.md`
-- `cover_letter.zh.md`
+- `cover_letter.en.docx`
 - `highlights.en.md`
+- `highlights.en.docx`
+
+Chinese deliverables (produced only when `output_language: zh` or
+`translation_package: zh`):
+
+- `cover_letter.zh.md`
+- `cover_letter.zh.docx`
 - `highlights.zh.md`
+- `highlights.zh.docx`
+
+Plus, in every run:
+
 - `submission_check.md` after running `submission_check.py --write`
+
+Do not generate `*.zh.*` files for a default English-only run. `submission_check.py`
+is config-driven: it only demands the files for the configured language(s) and
+will not fail an English-only package for missing Chinese files (any Chinese
+file that *is* present is still validated).
 
 The `.docx` files are the formal user-facing outputs. The `.md` files are
 auditable source drafts for checking and regeneration.
@@ -119,22 +137,31 @@ checklist.
 
 ## Word Output
 
-Always generate Word files for the submission package:
+Generate Word files for the deliverables required by the configured language
+(see "Default outputs" above). For a default English-only run that is:
 
 ```text
 paper_rewriting_output/submission_package/cover_letter.en.docx
-paper_rewriting_output/submission_package/cover_letter.zh.docx
 paper_rewriting_output/submission_package/highlights.en.docx
+```
+
+When Chinese deliverables are required (`output_language: zh` or
+`translation_package: zh`), also generate:
+
+```text
+paper_rewriting_output/submission_package/cover_letter.zh.docx
 paper_rewriting_output/submission_package/highlights.zh.docx
 ```
 
-Use pandoc from the submission package directory:
+Use pandoc from the submission package directory, converting each Markdown
+source that exists:
 
 ```bash
 cd paper_rewriting_output/submission_package
 pandoc cover_letter.en.md -o cover_letter.en.docx
-pandoc cover_letter.zh.md -o cover_letter.zh.docx
 pandoc highlights.en.md -o highlights.en.docx
+# Only when Chinese deliverables are required:
+pandoc cover_letter.zh.md -o cover_letter.zh.docx
 pandoc highlights.zh.md -o highlights.zh.docx
 ```
 
