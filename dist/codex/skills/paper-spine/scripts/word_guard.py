@@ -666,7 +666,9 @@ def fix_docx_fonts(docx_path: Path, mode: str) -> bool:
     new_document = ElementTree.tostring(document_root, encoding="utf-8", xml_declaration=True)
     new_styles = ElementTree.tostring(styles_root, encoding="utf-8", xml_declaration=True)
     new_theme = ElementTree.tostring(theme_root, encoding="utf-8", xml_declaration=True) if theme_root is not None else None
-    tmp_fd, tmp_name = tempfile.mkstemp(suffix=".docx")
+    # Create the temp in the SAME directory as the target so the atomic replace
+    # stays on one filesystem — os.replace fails across drives on Windows (WinError 17).
+    tmp_fd, tmp_name = tempfile.mkstemp(suffix=".docx", dir=str(docx_path.parent))
     os.close(tmp_fd)
     tmp = Path(tmp_name)
     try:

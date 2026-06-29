@@ -255,6 +255,25 @@ class WordGuardTests(unittest.TestCase):
             result = run_guard(docx, min_chars=50)
             self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
 
+    def test_fix_fonts_temp_is_beside_docx_not_cross_drive(self) -> None:
+        # Regression: fix_docx_fonts must create its temp in the docx's OWN dir.
+        # A system-temp temp + os.replace fails across drives on Windows
+        # (WinError 17) when the project is on a different drive than %TEMP%.
+        src = (ROOT / "src" / "scripts" / "word_guard.py").read_text(encoding="utf-8")
+        self.assertIn("dir=str(docx_path.parent)", src)
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp) / "sub"
+            d.mkdir()
+            docx = d / "paper.docx"
+            make_docx(docx, ["Title paragraph with enough text to check. " * 20])
+            res = subprocess.run(
+                [sys.executable, "src/scripts/word_guard.py", str(docx), "--fix-fonts", "--language", "en"],
+                cwd=ROOT, text=True, capture_output=True, check=False,
+            )
+            self.assertNotIn("WinError 17", res.stdout + res.stderr)
+            self.assertNotIn("Traceback", res.stdout + res.stderr)
+            self.assertEqual([p.name for p in d.glob("tmp*.docx")], [])
+
 
 if __name__ == "__main__":
     unittest.main()
