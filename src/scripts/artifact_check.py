@@ -968,7 +968,6 @@ def validate_manifest_config_consistency(output_dir: Path, config: dict[str, obj
     if language == "en" and package == "none":
         if "paper.zh.docx" in content or "word_report.zh.md" in content:
             zh_word_mentioned = "paper.zh.docx" in content or "word_report.zh.md" in content
-            has_required = "required" in content
             if zh_word_mentioned:
                 issues.append(
                     "final_artifact_manifest.md mentions Chinese Word files but "

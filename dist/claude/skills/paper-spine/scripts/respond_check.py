@@ -19,7 +19,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _paper_spine_utils import table_rows
 
-
 # ---------------------------------------------------------------------------
 # comment ID extraction
 # ---------------------------------------------------------------------------

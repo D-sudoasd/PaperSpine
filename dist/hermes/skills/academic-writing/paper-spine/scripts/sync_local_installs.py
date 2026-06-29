@@ -91,7 +91,9 @@ def build_skill_tree(dest: Path, *, hermes: bool = False) -> None:
         shutil.rmtree(dest)
     dest.mkdir(parents=True, exist_ok=True)
     if hermes:
-        (dest / "SKILL.md").write_text(hermes_frontmatter() + shared_skill_body(), encoding="utf-8")
+        (dest / "SKILL.md").write_text(
+            hermes_frontmatter() + shared_skill_body(), encoding="utf-8", newline="\n"
+        )
     else:
         shutil.copy2(SRC_SKILL / "SKILL.md", dest / "SKILL.md")
     copy_tree(SRC_SKILL / "references", dest / "references")

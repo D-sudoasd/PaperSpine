@@ -372,7 +372,7 @@ def _font_values_from_rfonts(rfonts: ElementTree.Element | None) -> list[str]:
     if rfonts is None:
         return []
     values: list[str] = []
-    for key, value in rfonts.attrib.items():
+    for _key, value in rfonts.attrib.items():
         if not value:
             continue
         values.append(value)

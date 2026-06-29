@@ -497,8 +497,6 @@ def dispatch_review(out_dir: Path, manuscript_path: Path,
         for s in sections
     )
 
-    role_map = {"methods": 0, "contribution": 1, "clarity": 2}
-
     reviewer_configs = [
         {
             "file": "methods_reviewer.md",

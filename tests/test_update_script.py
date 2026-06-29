@@ -11,19 +11,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "src" / "scripts" / "paperspine_update.py"
+# V4: the published suite is a single orchestrator skill per host.
 SUITE_SKILLS = [
     "paper-spine",
-    "paper-spine-ui",
-    "paper-spine-intake",
-    "paper-spine-research",
-    "paper-spine-citation",
-    "paper-spine-rewrite",
-    "paper-spine-build",
-    "paper-spine-latex",
-    "paper-spine-audit",
-    "paper-spine-translate",
-    "paper-spine-humanize",
-    "paper-spine-update",
 ]
 
 
@@ -33,6 +23,15 @@ def write_json(path: Path, data: dict) -> None:
 
 
 def create_repo(root: Path, version: str, *, broken: bool = False) -> Path:
+    """Build a fake V4 single-skill PaperSpine repo for the updater.
+
+    The layout mirrors exactly what the rewritten ``validate_repo`` demands:
+    root installers + READMEs + manifest, the ``paper-spine`` skill published
+    under ``dist/{claude,codex,openclaw}/skills`` and
+    ``dist/hermes/skills/academic-writing``, and the Claude/Codex entry points.
+    When ``broken`` is set, one genuinely-required file (the Hermes SKILL.md)
+    is omitted so ``validate_repo`` must reject the package.
+    """
     manifest = {
         "version": version,
         "channel": "main",
@@ -47,21 +46,32 @@ def create_repo(root: Path, version: str, *, broken: bool = False) -> Path:
     (root / "install.sh").write_text("#!/bin/bash\n# installer\n", encoding="utf-8")
     (root / "README.md").write_text("# PaperSpine\n", encoding="utf-8")
     (root / "README.en.md").write_text("# PaperSpine\n", encoding="utf-8")
+
+    # Claude slash-command and Codex prompt entry points.
     (root / "dist" / "claude" / "commands").mkdir(parents=True)
-    for cmd_name in ("paperspine.md",):
-        (root / "dist" / "claude" / "commands" / cmd_name).write_text(
-            f"---\ndescription: {cmd_name}\n---\n", encoding="utf-8")
-    (root / "dist" / "codex" / "paper-spine").mkdir(parents=True)
-    (root / "dist" / "codex" / "paper-spine" / "SKILL.md").write_text(
-        "---\nname: paper-spine\ndescription: legacy\n---\n",
-        encoding="utf-8",
-    )
-    skills = SUITE_SKILLS[:-1] if broken else SUITE_SKILLS
+    (root / "dist" / "claude" / "commands" / "paperspine.md").write_text(
+        "---\ndescription: paperspine\n---\n", encoding="utf-8")
+    (root / "dist" / "codex" / "prompts").mkdir(parents=True)
+    (root / "dist" / "codex" / "prompts" / "paperspine.md").write_text(
+        "---\ndescription: paperspine\n---\n", encoding="utf-8")
+
+    # The single orchestrator skill, published once per agent host.
     for host in ("claude", "codex", "openclaw"):
-        for skill in skills:
+        for skill in SUITE_SKILLS:
             skill_dir = root / "dist" / host / "skills" / skill
             skill_dir.mkdir(parents=True)
             (skill_dir / "SKILL.md").write_text(
+                f"---\nname: {skill}\ndescription: {skill}\n---\n",
+                encoding="utf-8",
+            )
+
+    # Hermes nests the skill under the academic-writing namespace. The broken
+    # archive omits this required file to exercise validate_repo's rejection.
+    if not broken:
+        for skill in SUITE_SKILLS:
+            hermes_dir = root / "dist" / "hermes" / "skills" / "academic-writing" / skill
+            hermes_dir.mkdir(parents=True)
+            (hermes_dir / "SKILL.md").write_text(
                 f"---\nname: {skill}\ndescription: {skill}\n---\n",
                 encoding="utf-8",
             )
@@ -126,10 +136,10 @@ class PaperSpineUpdateScriptTests(unittest.TestCase):
             write_json(base / "config" / "config.json", config)
             result = self.run_updater(base, archive, "--yes")
             self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
-            self.assertTrue((base / "codex" / "skills" / "paper-spine-update" / "SKILL.md").exists())
-            self.assertTrue((base / "claude" / "skills" / "paper-spine-update" / "SKILL.md").exists())
+            self.assertTrue((base / "codex" / "skills" / "paper-spine" / "SKILL.md").exists())
+            self.assertTrue((base / "claude" / "skills" / "paper-spine" / "SKILL.md").exists())
             self.assertTrue((base / "claude" / "commands" / "paperspine.md").exists())
-            self.assertTrue((base / "openclaw" / "skills" / "paper-spine-update" / "SKILL.md").exists())
+            self.assertTrue((base / "openclaw" / "skills" / "paper-spine" / "SKILL.md").exists())
             self.assertEqual(json.loads((base / "config" / "config.json").read_text(encoding="utf-8")), config)
             state = json.loads((base / "config" / "install_state.json").read_text(encoding="utf-8"))
             self.assertEqual(state["installed_version"], "2.0.0-rc.3")
