@@ -21,9 +21,9 @@ by its absolute installed path — Codex runs from the project folder, where
 ```powershell
 $config = Join-Path (Get-Location) "paper_rewriting_output\paper_spine_config.json"
 $launcher = @(
-  "$env:USERPROFILE\.codex\skills\paper-spine-intake\scripts\launch_paperspine_ui.ps1",
-  "$env:USERPROFILE\.codex\skills\paper-spine-ui\scripts\launch_paperspine_ui.ps1",
-  "$env:USERPROFILE\.claude\skills\paper-spine-intake\scripts\launch_paperspine_ui.ps1"
+  "$env:USERPROFILE\.codex\skills\paper-spine\scripts\launch_paperspine_ui.ps1",
+  "$env:USERPROFILE\.claude\skills\paper-spine\scripts\launch_paperspine_ui.ps1",
+  "$env:USERPROFILE\AppData\Local\hermes\skills\academic-writing\paper-spine\scripts\launch_paperspine_ui.ps1"
 ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 if (-not $launcher) { throw "PaperSpine UI launcher not found. Reinstall or resync PaperSpine." }
 if (-not (Test-Path -LiteralPath $config)) {
@@ -40,9 +40,8 @@ Get-Content -LiteralPath $config -Raw
 
 ```bash
 CONFIG="paper_rewriting_output/paper_spine_config.json"
-LAUNCHER="$HOME/.codex/skills/paper-spine-intake/scripts/launch_paperspine_ui.sh"
-[ -f "$LAUNCHER" ] || LAUNCHER="$HOME/.codex/skills/paper-spine-ui/scripts/launch_paperspine_ui.sh"
-[ -f "$LAUNCHER" ] || LAUNCHER="$HOME/.claude/skills/paper-spine-intake/scripts/launch_paperspine_ui.sh"
+LAUNCHER="$HOME/.codex/skills/paper-spine/scripts/launch_paperspine_ui.sh"
+[ -f "$LAUNCHER" ] || LAUNCHER="$HOME/.claude/skills/paper-spine/scripts/launch_paperspine_ui.sh"
 if [ ! -f "$LAUNCHER" ]; then
   echo "PaperSpine UI launcher not found. Reinstall or resync PaperSpine." >&2; exit 1
 fi

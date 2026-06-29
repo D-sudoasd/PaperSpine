@@ -35,6 +35,10 @@ across multiple manuscripts.
 
 ## Current Threshold Location
 
-All tunable thresholds are module-level constants in `humanize_check.py`.
-This version establishes the calibration **workflow**; reading thresholds from
-config files is a future item.
+Default thresholds live in `DEFAULT_THRESHOLDS` (the `HumanizeThresholds`
+dataclass) in `humanize_check.py`. At runtime `load_thresholds()` reads
+per-run overrides from the `humanize_thresholds` block of
+`paper_spine_config.json`; missing, non-numeric, negative, or unknown keys
+fall back to the defaults and emit a warning. Edit the defaults in code for a
+permanent change, or set `humanize_thresholds` in the config to override a
+single run without touching the script.

@@ -211,47 +211,38 @@ def latest_manifest(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def validate_repo(root: Path) -> dict[str, Any]:
-    root_files = [
-        "install.ps1", "install.sh", "README.md", "README.en.md",
-    ]
-    plugin_files = [
-        ".claude-plugin/plugin.json", ".claude-plugin/marketplace.json",
-    ]
-    dist_files = [
+    """Validate a downloaded V4 single-skill PaperSpine package.
+
+    Stage V4 / issues #13 + #6: the suite is now a single ``paper-spine``
+    orchestrator skill published per host.  Validation only demands the files
+    that genuinely must exist in the current layout; it deliberately never
+    requires legacy artifacts removed across versions (e.g. README.zh-CN.md,
+    paper-spine.md, paperspine-legacy.md, dist/codex/paper-spine/SKILL.md).
+    """
+    # Files that must exist at the repository root in every published version.
+    required: list[str] = [
+        "install.ps1",
+        "install.sh",
+        "README.md",
+        "README.en.md",
         "dist/paperspine_version.json",
     ]
-    # Dynamically discover suite skills from dist/claude/skills/
-    claude_skills_dir = root / "dist" / "claude" / "skills"
-    discovered_skills: list[str] = []
-    if claude_skills_dir.is_dir():
-        discovered_skills = [d.name for d in claude_skills_dir.iterdir() if d.is_dir() and (d / "SKILL.md").exists()]
+    # The single orchestrator skill, published once per agent host.
+    for skill in SUITE_SKILLS:
+        required.append(f"dist/claude/skills/{skill}/SKILL.md")
+        required.append(f"dist/codex/skills/{skill}/SKILL.md")
+        required.append(f"dist/openclaw/skills/{skill}/SKILL.md")
+        # Hermes nests the skill under the academic-writing namespace.
+        required.append(f"dist/hermes/skills/academic-writing/{skill}/SKILL.md")
+    # Slash-command / prompt entry points for Claude and Codex.
+    required.append("dist/claude/commands/paperspine.md")
+    required.append("dist/codex/prompts/paperspine.md")
 
-    missing: list[str] = []
-    for rel in root_files + plugin_files + dist_files:
-        if not (root / rel).exists():
-            missing.append(rel)
-    if not discovered_skills:
-        missing.append("dist/claude/skills/*/SKILL.md — no skills discovered")
-    if set(discovered_skills) != set(SUITE_SKILLS):
-        lacking = set(SUITE_SKILLS) - set(discovered_skills)
-        if lacking:
-            missing.append(f"Missing skills from dist: {', '.join(sorted(lacking))}")
-        # Stage 2a: legacy worker directories (paper-spine-*) may co-exist
-        # with the main skill.  They are not errors.
-    for skill in discovered_skills:
-        for host in ("claude", "codex", "openclaw"):
-            path = root / "dist" / host / "skills" / skill / "SKILL.md"
-            if not path.exists():
-                missing.append(str(path.relative_to(root)))
-    for cmd_name in ("paperspine.md",):
-        cmd_path = root / "dist" / "claude" / "commands" / cmd_name
-        if not cmd_path.exists():
-            missing.append(str(cmd_path.relative_to(root)))
-    if not (root / "dist" / "codex" / "paper-spine" / "SKILL.md").exists():
-        missing.append("dist/codex/paper-spine/SKILL.md")
-
+    missing = [rel for rel in required if not (root / rel).exists()]
     if missing:
-        raise UpdateError("Downloaded PaperSpine package is incomplete:\n" + "\n".join(missing[:20]))
+        raise UpdateError(
+            "Downloaded PaperSpine package is incomplete:\n" + "\n".join(missing[:20])
+        )
     return read_json(root / "dist" / VERSION_FILE)
 
 

@@ -30,10 +30,13 @@ Discussion usually need a mix of:
 
 ## Required Table
 
-Use this Markdown table:
+Use this Markdown table (11 columns). The last three columns — `Source Channel`,
+`Verified`, and `Verification Note` — are what let `citation_quality_audit.py`
+and `artifact_check.py` accept non-DOI sources without inflating their score:
 
-| Candidate ID | Reference/BibTeX | Year | Recency | Supports Section | Support Claim Sentence | Why This Paper Fits | Source |
-|---|---|---|---|---|---|---|---|
+| Candidate ID | Reference/BibTeX | Year | Recency | Supports Section | Support Claim Sentence | Why This Paper Fits | Source | Source Channel | Verified | Verification Note |
+|---|---|---|---|---|---|---|---|---|---|---|
+| C001 | Vaswani et al. "Attention Is All You Need." arXiv:1706.03762 | 2017 | foundational | Related Work | Prior work established self-attention as a replacement for recurrence. | Foundational transformer paper the method builds on. | arXiv | arxiv | yes | Confirmed via arXiv abstract page; arXiv:1706.03762 title matches. |
 
 Rules:
 
@@ -44,8 +47,17 @@ Rules:
   `This supports the Discussion claim that ...`.
 - The support sentence must not invent a result that is not visible from the
   source metadata, abstract, or user-provided PDF/text.
+- Fill `Source Channel` for every row: `MCP-CNKI`, `MCP-IEEE`, `MCP-PubMed`,
+  `MCP-Crossref`, `web`, `arxiv`, `publisher`, `local`, or `unknown`.
+- For external channels (`web`, `MCP-*`, `Crossref`, `PubMed`, `Scholar`,
+  `Semantic Scholar`, `IEEE`, `CNKI`, `WOS`, `arxiv`, `publisher`), do not leave
+  verification blank: `Verified` must be `yes`, `verified`, `pass`, or `true`,
+  and `Verification Note` must record a **stable identifier** (DOI, arXiv ID, or
+  URL) plus how it was checked. A `Verified=yes` flag with no identifier is
+  treated as self-attestation only and will not reach `verified` status.
 - Mark uncertain sources as `[VERIFY]` and do not use them in final writing
-  until verified.
+  until verified. Do not use `[VERIFY]`, `TODO`, `TBD`, `pending`, or empty
+  verification values for external-source rows.
 - During drafting, select only the subset needed for coherent Introduction and
   Discussion paragraphs. Do not dump all candidates into the final paper.
 

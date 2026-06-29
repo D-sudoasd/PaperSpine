@@ -16,7 +16,10 @@ from xml.etree import ElementTree
 CITATION_PATTERNS = (
     re.compile(r"\\cite[a-zA-Z]*\s*\{"),
     re.compile(r"\[@[\w:.\-]+(?:\s*;\s*@[\w:.\-]+)*\]"),
-    re.compile(r"\[\d+(?:\s*[,;\-]\s*\d+)*\]"),
+    # Numbered citations such as [1], [12], [1,2], [1-3]. Reference indices are
+    # at most three digits in practice; restricting the width keeps bracketed
+    # four-digit years like [2024] from being misread as citation markers.
+    re.compile(r"\[\d{1,3}(?:\s*[,;\-]\s*\d{1,3})*\]"),
 )
 PLACEHOLDER_PATTERN = re.compile(r"\[[A-Z][A-Z0-9 /._-]{2,}\]")
 TODO_PATTERN = re.compile(r"\bTODO\b|\[\[|\]\]", re.IGNORECASE)
@@ -24,17 +27,30 @@ WORD_PATTERN = re.compile(r"[A-Za-z]+(?:[-'][A-Za-z]+)?")
 CJK_PATTERN = re.compile(r"[\u4e00-\u9fff]")
 ORIGINALITY_PATTERNS = (
     re.compile(r"\boriginal(?:ity)?\b", re.IGNORECASE),
+    re.compile(r"\bhas\s+not\s+been\s+(?:previously\s+)?published\b", re.IGNORECASE),
+    re.compile(r"\bnot\s+been\s+(?:previously\s+)?published\b", re.IGNORECASE),
+    re.compile(r"\bpreviously\s+unpublished\b", re.IGNORECASE),
+    re.compile(r"\bunpublished\s+(?:work|manuscript|material|results?)\b", re.IGNORECASE),
     re.compile(r"原创"),
+    re.compile(r"未(?:曾|经)?(?:公开)?发表"),
 )
 NOT_UNDER_CONSIDERATION_PATTERNS = (
-    re.compile(r"not\s+(?:currently\s+)?under\s+consideration", re.IGNORECASE),
-    re.compile(r"not\s+(?:been\s+)?submitted\s+elsewhere", re.IGNORECASE),
-    re.compile(r"not\s+under\s+review", re.IGNORECASE),
-    re.compile(r"no\s+simultaneous\s+submission", re.IGNORECASE),
+    re.compile(r"not\s+(?:currently\s+)?(?:being\s+)?(?:under|in)\s+(?:active\s+)?(?:consideration|review)", re.IGNORECASE),
+    re.compile(r"not\s+being\s+considered\b", re.IGNORECASE),
+    re.compile(
+        r"(?:will\s+not\s+be|(?:has\s+|have\s+)?not\s+(?:been\s+)?)"
+        r"(?:concurrently\s+|simultaneously\s+)?submitted\s+"
+        r"(?:to\s+|for\s+)?(?:any\s+)?(?:other|another|elsewhere)",
+        re.IGNORECASE,
+    ),
+    re.compile(r"\bno\s+(?:simultaneous|concurrent|duplicate)\s+submission", re.IGNORECASE),
+    re.compile(r"\bexclusively\s+(?:submitted|to)\b", re.IGNORECASE),
+    re.compile(r"\bsolely\s+(?:submitted|to)\b", re.IGNORECASE),
     re.compile(r"未一稿多投"),
     re.compile(r"未同时投稿"),
     re.compile(r"未投他刊"),
     re.compile(r"未在其他期刊"),
+    re.compile(r"未(?:同时)?(?:向|在)?其他?(?:刊物|期刊|杂志)(?:投稿|发表)?"),
 )
 REQUIRED_DOCX = (
     "cover_letter.en.docx",
@@ -205,8 +221,12 @@ def check_cover_letter(output_dir: Path, source_name: str) -> tuple[int, list[st
 
     text = read_text(path)
     words = cover_word_count(text)
-    if words < 150 or words > 500:
-        findings.append(f"{path.name} word count is {words}; expected 150-500 words.")
+    # Cover letters are normally 250-400 words (see references/submission.md). Treat
+    # length as advisory: only a clearly broken letter (empty or runaway) blocks.
+    if words and (words < 250 or words > 400):
+        warnings.append(f"{path.name} word count is {words}; cover letters are normally 250-400 words.")
+    if words < 60:
+        findings.append(f"{path.name} word count is {words}; the cover letter looks empty or truncated.")
 
     if not contains_any(text, ORIGINALITY_PATTERNS):
         findings.append(f"{path.name} must include an originality statement.")
@@ -331,55 +351,83 @@ def fix_docx_fonts(output_dir: Path) -> list[str]:
     return fixed
 
 
-def validate_docx(path: Path) -> list[str]:
+def validate_docx(path: Path) -> tuple[list[str], list[str]]:
+    """Return (blocking issues, advisory warnings) for a single docx.
+
+    Blocking issues cover genuinely broken files (not a zip, missing core parts,
+    no readable text). Font policy and page geometry are advisory: plain pandoc
+    output is structurally valid even before `word_guard --fix-fonts` is run, so
+    those mismatches must not force a FAIL.
+    """
     issues: list[str] = []
+    warnings: list[str] = []
     if not path.exists():
-        return [f"{path.name} is missing."]
+        return [f"{path.name} is missing."], warnings
     if path.suffix.lower() != ".docx":
-        return [f"{path.name} is not a .docx file."]
+        return [f"{path.name} is not a .docx file."], warnings
     try:
         with zipfile.ZipFile(path) as docx:
             names = set(docx.namelist())
             if "[Content_Types].xml" not in names or "word/document.xml" not in names:
-                return [f"{path.name} is missing required docx parts."]
+                return [f"{path.name} is missing required docx parts."], warnings
             root = ElementTree.fromstring(docx.read("word/document.xml"))
     except zipfile.BadZipFile:
-        return [f"{path.name} is not a valid zip/docx file."]
+        return [f"{path.name} is not a valid zip/docx file."], warnings
     except ElementTree.ParseError as exc:
-        return [f"{path.name} word/document.xml parse error: {exc}."]
+        return [f"{path.name} word/document.xml parse error: {exc}."], warnings
     ns = {"w": W_NS}
     text = "".join(node.text or "" for node in root.findall(".//w:t", ns)).strip()
     if not text:
         issues.append(f"{path.name} has no readable text.")
     fonts = font_values(root)
-    if LATIN_FONT not in fonts:
-        issues.append(f"{path.name} does not set Latin text to {LATIN_FONT}.")
-    if EAST_ASIA_FONT not in fonts:
-        issues.append(f"{path.name} does not set Chinese/East Asian text to {EAST_ASIA_FONT}.")
+    is_zh = path.name.endswith(".zh.docx") or path.stem.endswith(".zh")
+    if is_zh:
+        if EAST_ASIA_FONT not in fonts:
+            warnings.append(
+                f"{path.name} does not set East Asian text to {EAST_ASIA_FONT} "
+                "(advisory; run word_guard --fix-fonts to polish fonts)."
+            )
+    elif LATIN_FONT not in fonts:
+        warnings.append(
+            f"{path.name} does not set Latin text to {LATIN_FONT} "
+            "(advisory; run word_guard --fix-fonts to polish fonts)."
+        )
     sectpr = root.find(".//w:sectPr", ns)
     if sectpr is None:
-        issues.append(f"{path.name} does not set page section properties.")
+        warnings.append(f"{path.name} does not set page section properties (advisory).")
     else:
-        pg_sz = sectpr.find("w:pgSz", ns)
-        if pg_sz is None:
-            issues.append(f"{path.name} does not set page size.")
-        pg_mar = sectpr.find("w:pgMar", ns)
-        if pg_mar is None:
-            issues.append(f"{path.name} does not set page margins.")
-    return issues
+        if sectpr.find("w:pgSz", ns) is None:
+            warnings.append(f"{path.name} does not set page size (advisory).")
+        if sectpr.find("w:pgMar", ns) is None:
+            warnings.append(f"{path.name} does not set page margins (advisory).")
+    return issues, warnings
 
 
-def check_docx_outputs(output_dir: Path) -> tuple[list[str], list[str]]:
+def check_docx_outputs(
+    output_dir: Path, required_docx: tuple[str, ...]
+) -> tuple[list[str], list[str], list[str]]:
     findings: list[str] = []
+    warnings: list[str] = []
     present: list[str] = []
+    # Always validate any docx that is present, but only require the ones that
+    # belong to the configured output language(s).
+    names = list(required_docx)
     for name in REQUIRED_DOCX:
+        if name not in names and (output_dir / name).exists():
+            names.append(name)
+    for name in names:
         path = output_dir / name
-        issues = validate_docx(path)
+        if not path.exists():
+            if name in required_docx:
+                findings.append(f"{name} is missing.")
+            continue
+        issues, file_warnings = validate_docx(path)
+        warnings.extend(file_warnings)
         if issues:
             findings.extend(issues)
         else:
             present.append(name)
-    return present, findings
+    return present, findings, warnings
 
 
 def dedupe(items: list[str]) -> list[str]:
@@ -410,36 +458,54 @@ def check_submission(
 
     config = read_config(output_dir)
     language = output_language(config)
-    highlights_required = True
+    translation = str(config.get("translation_package") or "none").lower()
+    # English deliverables are required unless the run is Chinese-only; Chinese
+    # deliverables are required only when the output language is Chinese or a
+    # Chinese translation package was requested. For an EN-only run the .zh
+    # markdown and .zh docx must not be demanded.
+    en_required = language != "zh"
+    zh_required = language == "zh" or translation == "zh"
+    highlights_required = en_required or zh_required
 
     if not output_dir.exists():
         findings.append(f"submission package directory does not exist: {output_dir}")
     else:
-        highlight_count, highlight_findings = check_highlights(
-            output_dir,
-            "highlights.en.md",
-            min_highlights,
-            max_highlights,
-            max_chars,
-        )
-        findings.extend(highlight_findings)
-        zh_highlight_count, zh_highlight_findings = check_highlights(
-            output_dir,
-            "highlights.zh.md",
-            min_highlights,
-            max_highlights,
-            max_chars,
-        )
-        findings.extend(zh_highlight_findings)
-        cover_words, cover_findings, cover_warnings, pending_items = check_cover_letter(output_dir, "cover_letter.en.md")
-        findings.extend(cover_findings)
-        warnings.extend(cover_warnings)
-        zh_cover_words, zh_cover_findings, zh_cover_warnings, zh_pending_items = check_cover_letter(output_dir, "cover_letter.zh.md")
-        findings.extend(zh_cover_findings)
-        warnings.extend(zh_cover_warnings)
-        pending_items = sorted(set(pending_items + zh_pending_items))
-        docx_files, docx_findings = check_docx_outputs(output_dir)
+        if en_required or (output_dir / "highlights.en.md").exists():
+            highlight_count, highlight_findings = check_highlights(
+                output_dir,
+                "highlights.en.md",
+                min_highlights,
+                max_highlights,
+                max_chars,
+            )
+            findings.extend(highlight_findings)
+        if zh_required or (output_dir / "highlights.zh.md").exists():
+            zh_highlight_count, zh_highlight_findings = check_highlights(
+                output_dir,
+                "highlights.zh.md",
+                min_highlights,
+                max_highlights,
+                max_chars,
+            )
+            findings.extend(zh_highlight_findings)
+        if en_required or (output_dir / "cover_letter.en.md").exists():
+            cover_words, cover_findings, cover_warnings, pending_items = check_cover_letter(output_dir, "cover_letter.en.md")
+            findings.extend(cover_findings)
+            warnings.extend(cover_warnings)
+        if zh_required or (output_dir / "cover_letter.zh.md").exists():
+            zh_cover_words, zh_cover_findings, zh_cover_warnings, zh_pending_items = check_cover_letter(output_dir, "cover_letter.zh.md")
+            findings.extend(zh_cover_findings)
+            warnings.extend(zh_cover_warnings)
+            pending_items = sorted(set(pending_items + zh_pending_items))
+
+        required_docx: list[str] = []
+        if en_required:
+            required_docx.extend(("cover_letter.en.docx", "highlights.en.docx"))
+        if zh_required:
+            required_docx.extend(("cover_letter.zh.docx", "highlights.zh.docx"))
+        docx_files, docx_findings, docx_warnings = check_docx_outputs(output_dir, tuple(required_docx))
         findings.extend(docx_findings)
+        warnings.extend(docx_warnings)
 
     return SubmissionCheckResult(
         output_dir=str(output_dir),

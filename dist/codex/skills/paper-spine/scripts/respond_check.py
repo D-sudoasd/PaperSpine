@@ -15,39 +15,9 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-# ---------------------------------------------------------------------------
-# table helpers (self-contained)
-# ---------------------------------------------------------------------------
-
-def _split_table_line(line: str) -> list[str]:
-    return [c.strip() for c in line.strip().strip("|").split("|")]
-
-
-def _is_sep(cells: list[str]) -> bool:
-    return bool(cells) and all(c and set(c) <= {"-", ":", " "} for c in cells)
-
-
-def _table_rows(text: str) -> tuple[list[str], list[list[str]]]:
-    rows: list[list[str]] = []
-    for raw in text.splitlines():
-        line = raw.strip()
-        if not (line.startswith("|") and line.endswith("|")):
-            continue
-        cells = _split_table_line(line)
-        if _is_sep(cells):
-            continue
-        rows.append(cells)
-    return (rows[0], rows[1:]) if rows else ([], [])
-
-
-def _col_index(header: list[str], *names: str) -> int | None:
-    lower = [h.lower() for h in header]
-    for name in names:
-        for idx, h in enumerate(lower):
-            if name.lower() in h:
-                return idx
-    return None
+from _paper_spine_utils import table_rows
 
 
 # ---------------------------------------------------------------------------
@@ -74,6 +44,11 @@ def _extract_comment_ids(text: str) -> list[str]:
             seen.add(cid)
             ids.append(cid)
     return ids
+
+
+def _id_present(cid: str, text: str) -> bool:
+    """Word-boundary match so C1 does not match inside C10/C11."""
+    return re.search(r"\b" + re.escape(cid) + r"\b", text, re.IGNORECASE) is not None
 
 
 # ---------------------------------------------------------------------------
@@ -154,11 +129,18 @@ REQUIRED_FILES = [
 
 MATRIX_REQUIRED_COLS = [
     "comment id",
+    "reviewer",
     "original comment",
+    "issue type",
+    "required action",
     "manuscript change",
+    "evidence",
     "response draft",
     "status",
 ]
+
+# Allowed Status values per respond.md spec.
+ALLOWED_STATUS = {"draft", "final", "needs-author"}
 
 
 def check_respond(out_dir: Path) -> RespondCheckResult:
@@ -195,14 +177,15 @@ def check_respond(out_dir: Path) -> RespondCheckResult:
     # --- response_matrix.md ---
     if matrix_path.exists():
         matrix_text = matrix_path.read_text(encoding="utf-8", errors="ignore")
-        header, rows = _table_rows(matrix_text)
+        header, rows = table_rows(matrix_text)
 
         if not header:
             result.ok = False
             result.findings.append("response_matrix.md has no parseable table.")
         else:
             # Check required columns
-            header_text = " ".join(c.lower() for c in header)
+            header_lower = [c.lower() for c in header]
+            header_text = " ".join(header_lower)
             for col in MATRIX_REQUIRED_COLS:
                 if col not in header_text:
                     result.ok = False
@@ -210,13 +193,23 @@ def check_respond(out_dir: Path) -> RespondCheckResult:
                         f"response_matrix.md missing required column: {col}"
                     )
 
-            # Check comment coverage in matrix
+            def _find_col(*names: str) -> int | None:
+                for name in names:
+                    for idx, h in enumerate(header_lower):
+                        if name in h:
+                            return idx
+                return None
+
+            status_idx = _find_col("status")
+            response_idx = _find_col("response draft", "response")
+
+            # Check comment coverage in matrix (word-boundary, not substring)
             if rows:
                 matrix_text_full = " ".join(" ".join(r) for r in rows)
-                matrix_ids: set[str] = set()
-                for cid in extracted_ids:
-                    if cid.lower() in matrix_text_full.lower():
-                        matrix_ids.add(cid)
+                matrix_ids = {
+                    cid for cid in extracted_ids
+                    if _id_present(cid, matrix_text_full)
+                }
                 missing_matrix = [c for c in extracted_ids if c not in matrix_ids]
                 if missing_matrix:
                     result.ok = False
@@ -225,6 +218,30 @@ def check_respond(out_dir: Path) -> RespondCheckResult:
                         f"Comments missing from response_matrix.md: "
                         f"{missing_matrix[:10]}"
                     )
+
+            # Validate per-row Response Draft + Status cells
+            for row_num, row in enumerate(rows, start=1):
+                if response_idx is not None:
+                    cell = row[response_idx] if response_idx < len(row) else ""
+                    if not re.search(r"[A-Za-z0-9一-鿿]", cell):
+                        result.ok = False
+                        result.findings.append(
+                            f"response_matrix.md row {row_num}: empty Response Draft cell."
+                        )
+                if status_idx is not None:
+                    cell = row[status_idx] if status_idx < len(row) else ""
+                    norm = re.sub(r"[^a-z-]", "", cell.lower())
+                    if not norm:
+                        result.ok = False
+                        result.findings.append(
+                            f"response_matrix.md row {row_num}: empty Status cell."
+                        )
+                    elif norm not in ALLOWED_STATUS:
+                        result.ok = False
+                        result.findings.append(
+                            f"response_matrix.md row {row_num}: invalid Status "
+                            f"'{cell}' (allowed: {sorted(ALLOWED_STATUS)})."
+                        )
 
             # Check forbidden markers in matrix
             forbidden = _check_forbidden(matrix_text)
@@ -260,9 +277,9 @@ def check_respond(out_dir: Path) -> RespondCheckResult:
                 f"{letter_chars} Chinese chars. Minimum 150 words or 300 Chinese chars."
             )
 
-        # Comment coverage in letter
+        # Comment coverage in letter (word-boundary, not substring)
         missing_letter = [
-            c for c in extracted_ids if c.lower() not in letter_text.lower()
+            c for c in extracted_ids if not _id_present(c, letter_text)
         ]
         if missing_letter:
             result.ok = False
@@ -301,6 +318,34 @@ def check_respond(out_dir: Path) -> RespondCheckResult:
             result.ok = False
             result.findings.append(
                 f"revision_change_log.md contains forbidden markers: {forbidden}"
+            )
+
+    # --- revised manuscript (spec output #5) ---
+    revised_path = out_dir / "revised_manuscript.md"
+    has_revised = (
+        revised_path.exists()
+        and revised_path.read_text(encoding="utf-8", errors="ignore").strip()
+    )
+    if not has_revised:
+        # Accept a note that changes were applied to final_paper/main.tex.
+        note_sources = []
+        for fname in (
+            "revision_change_log.md",
+            "response_letter.md",
+            "response_matrix.md",
+        ):
+            fp = out_dir / fname
+            if fp.exists():
+                note_sources.append(
+                    fp.read_text(encoding="utf-8", errors="ignore")
+                )
+        combined = "\n".join(note_sources).lower()
+        if "main.tex" not in combined:
+            result.ok = False
+            result.findings.append(
+                "Revised manuscript missing (spec output #5): provide "
+                "revised_manuscript.md or a note that changes were applied "
+                "to final_paper/main.tex."
             )
 
     return result

@@ -6,7 +6,8 @@ description: Start PaperSpine with automatic intake UI when configuration is mis
 Start the PaperSpine workflow for the current project.
 
 If `paper_rewriting_output/paper_spine_config.json` is missing or incomplete,
-route to `paper-spine-ui` and launch the PaperSpine intake UI automatically.
+route through the `paper-spine` skill and launch the PaperSpine intake UI
+automatically.
 Do not hand-write the configuration.
 
 ## Platform-specific launcher
@@ -15,7 +16,7 @@ Do not hand-write the configuration.
 
 ```powershell
 $config = Join-Path (Get-Location) "paper_rewriting_output\paper_spine_config.json"
-$launcher = Join-Path $env:USERPROFILE ".claude\skills\paper-spine-intake\scripts\launch_paperspine_ui.ps1"
+$launcher = Join-Path $env:USERPROFILE ".claude\skills\paper-spine\scripts\launch_paperspine_ui.ps1"
 if (-not (Test-Path -LiteralPath $launcher)) {
   throw "PaperSpine UI launcher not found at $launcher. Reinstall or resync PaperSpine."
 }
@@ -35,7 +36,7 @@ Get-Content -LiteralPath $config -Raw
 
 ```bash
 CONFIG="paper_rewriting_output/paper_spine_config.json"
-LAUNCHER="$HOME/.claude/skills/paper-spine-intake/scripts/launch_paperspine_ui.sh"
+LAUNCHER="$HOME/.claude/skills/paper-spine/scripts/launch_paperspine_ui.sh"
 
 if [ ! -f "$LAUNCHER" ]; then
   echo "PaperSpine UI launcher not found at $LAUNCHER. Reinstall or resync PaperSpine." >&2

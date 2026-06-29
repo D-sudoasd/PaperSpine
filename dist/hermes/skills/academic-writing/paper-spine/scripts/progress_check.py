@@ -319,13 +319,24 @@ def submission_requested(output_dir: Path, config: dict) -> bool:
     return (output_dir / "submission_package").exists() or bool(config.get("submission_requested"))
 
 
-def required_artifacts_for_stage(stage: StageDef, config: dict) -> list[str]:
+def required_artifacts_for_stage(stage: StageDef, config: dict, require: bool = False) -> list[str]:
     required = list(stage.required)
     if stage.key == "word":
-        if not primary_word_requested(config):
-            required = []
-        if chinese_word_requested(config):
-            required.extend(["final_paper/paper.zh.docx", "word_report.zh.md"])
+        if require:
+            # --require forces the Word gate even when word_output is none:
+            # the standard pair must exist (or the zh pair when output_language=zh).
+            output_language = str(config.get("output_language") or "").strip().lower()
+            if output_language == "zh":
+                required = ["final_paper/paper.zh.docx", "word_report.zh.md"]
+            else:
+                required = ["final_paper/paper.docx", "word_report.md"]
+                if chinese_word_requested(config):
+                    required.extend(["final_paper/paper.zh.docx", "word_report.zh.md"])
+        else:
+            if not primary_word_requested(config):
+                required = []
+            if chinese_word_requested(config):
+                required.extend(["final_paper/paper.zh.docx", "word_report.zh.md"])
     return required
 
 
@@ -389,7 +400,7 @@ def gate_check(output_dir: Path, stage_key: str, require: bool = False) -> tuple
     if stage_key == "final_audit":
         return _run_final_audit_gate(output_dir, config)
 
-    required = required_artifacts_for_stage(stage_def, config)
+    required = required_artifacts_for_stage(stage_def, config, require=require)
     missing = [art for art in required if not _artifact_exists(output_dir, art)]
     if missing:
         return False, (
@@ -398,23 +409,17 @@ def gate_check(output_dir: Path, stage_key: str, require: bool = False) -> tuple
         ), missing
 
     # FAIL/BLOCKED content checks (mirrors check_progress post-processing)
-    if stage_key == "final_audit" and _report_contains_fail_blocked(output_dir, "artifact_check.md"):
+    if stage_key == "integrity_audit" and _report_contains_fail_blocked(output_dir, "integrity_audit.md"):
+        return False, (
+            f"GATE FAILED: {stage_def.label} - integrity_audit.md reports FAIL/BLOCKED. "
+            "Resolve the audit findings and re-run before continuing."
+        ), ["integrity_audit.md: FAIL/BLOCKED"]
+
+    if stage_key == "integrity_audit" and _report_contains_fail_blocked(output_dir, "artifact_check.md"):
         return False, (
             f"GATE FAILED: {stage_def.label} - artifact_check.md reports FAIL/BLOCKED. "
             "Re-run audit before continuing."
         ), ["artifact_check.md: FAIL/BLOCKED"]
-
-    if stage_key == "final_audit" and _report_contains_fail_blocked(output_dir, "citation_bank_check.md"):
-        return False, (
-            f"GATE FAILED: {stage_def.label} - citation_bank_check.md reports FAIL/BLOCKED. "
-            "Re-run citation bank before continuing."
-        ), ["citation_bank_check.md: FAIL/BLOCKED"]
-
-    if stage_key == "final_audit" and _report_contains_fail_blocked(output_dir, "citation_quality_audit.md"):
-        return False, (
-            f"GATE FAILED: {stage_def.label} - citation_quality_audit.md reports FAIL/BLOCKED. "
-            "Re-run citation quality audit before continuing."
-        ), ["citation_quality_audit.md: FAIL/BLOCKED"]
 
     if stage_key == "citation" and _report_contains_fail_blocked(output_dir, "citation_bank_check.md"):
         return False, (

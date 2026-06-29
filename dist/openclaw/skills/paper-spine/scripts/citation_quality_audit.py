@@ -443,14 +443,29 @@ def audit_citations(output_dir: Path, no_api: bool, timeout: int, delay: float, 
 
         if not entry.doi:
             entry.manual_identifier = extract_manual_identifier(record)
-            if has_manual_verification(record):
+            if has_manual_verification(record) and entry.manual_identifier:
                 entry.status = "verified"
                 entry.doi_resolves = True
-                entry.resolvability_score = 80 if entry.manual_identifier else 70
+                entry.resolvability_score = 80
                 entry.teaching_note = (
                     "Citation verified through a non-DOI channel recorded in the citation bank. "
                     "This is acceptable for arXiv preprints, official policy pages, proceedings, "
                     "and publisher/database records when the verification note is specific."
+                )
+            elif has_manual_verification(record):
+                # Verified flag is set, but no stable identifier (DOI/arXiv/URL)
+                # was recorded — this is self-attestation without independent
+                # evidence, so it must not reach verified status or a high score.
+                entry.status = "pending"
+                entry.resolvability_score = 35
+                entry.issues.append(
+                    "Verified flag set but no stable identifier (DOI, arXiv ID, or URL) "
+                    "found in the row; self-attestation alone cannot confirm the citation"
+                )
+                entry.teaching_note = (
+                    "A Verified=yes flag is not enough on its own. Record a stable identifier "
+                    "(DOI, arXiv ID, or URL) in the reference, source, or verification note so the "
+                    "citation can be independently re-checked. Until then this row stays unverified."
                 )
             else:
                 entry.status = "error"

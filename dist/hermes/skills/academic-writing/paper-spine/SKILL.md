@@ -140,9 +140,12 @@ not declare completion.
 ### Stage 1 — Intake / Configuration
 
 If configuration is missing or incomplete, run the terminal wizard from
-the intake UI (via `scripts/launch_paperspine_ui.ps1`); do not ask the user
-to hand-write JSON or answer a long plain chat checklist when a terminal is
-available. In Claude Code, `/paperspine` is the preferred entry: it launches
+the intake UI via the absolute installed launcher
+`$env:USERPROFILE\.claude\skills\paper-spine\scripts\launch_paperspine_ui.ps1`
+(or the `.codex` equivalent, or
+`$HOME/.codex/skills/paper-spine/scripts/launch_paperspine_ui.sh` on bash); do
+not ask the user to hand-write JSON or answer a long plain chat checklist when a
+terminal is available. In Claude Code, `/paperspine` is the preferred entry: it launches
 the external intake window automatically when configuration is missing.
 
 **Codex hard constraint (do not skip):** when

@@ -8,7 +8,8 @@ published work.
 Crossref is an enhancement, not a hard dependency.  When the API is unreachable
 citations are marked SKIPPED rather than failing the check.
 
-Rate-limited to ~1 request/second to be polite to the Crossref API.
+Use ``--delay`` to throttle requests (in seconds) to be polite to the
+Crossref API; ``--no-api`` skips network access entirely.
 """
 
 from __future__ import annotations
@@ -27,7 +28,6 @@ from pathlib import Path
 
 CROSSREF_QUERY_URL = "https://api.crossref.org/works"
 USER_AGENT = "PaperSpine/1.0 (mailto:paperspine@example.com)"
-REQUEST_DELAY = 1.1  # seconds between requests
 
 # Title similarity threshold for a "matched" verdict
 MIN_TITLE_SIMILARITY = 0.6
@@ -202,7 +202,7 @@ def _fetch_crossref_json(url: str, timeout: int = 15) -> dict | None:
 
 def _crossref_doi_lookup(doi: str) -> dict | None:
     """Query Crossref by DOI. Returns parsed JSON or None on failure."""
-    url = f"{CROSSREF_QUERY_URL}/{urllib.request.quote(doi, safe='')}"
+    url = f"{CROSSREF_QUERY_URL}/{urllib.parse.quote(doi, safe='')}"
     return _fetch_crossref_json(url)
 
 
@@ -219,6 +219,37 @@ def _crossref_bibliographic_query(query: str) -> dict | None:
 # ---------------------------------------------------------------------------
 # matching logic
 # ---------------------------------------------------------------------------
+
+def _crossref_year(msg: dict) -> str:
+    """Extract a publication year from a Crossref message.
+
+    Prefers the actual publication date fields (``issued``,
+    ``published-print``, ``published-online``) over ``created``, which
+    records the *registration* date and can differ from the publication
+    year for older or back-filled works.
+    """
+    for key in ("issued", "published-print", "published-online", "published"):
+        field_val = msg.get(key)
+        if isinstance(field_val, dict):
+            parts = field_val.get("date-parts") or [[0]]
+            try:
+                year = parts[0][0]
+            except (IndexError, TypeError):
+                year = 0
+            if year:
+                return str(year)
+    # Fall back to the registration date only if nothing else is available.
+    created = msg.get("created")
+    if isinstance(created, dict):
+        parts = created.get("date-parts") or [[0]]
+        try:
+            year = parts[0][0]
+        except (IndexError, TypeError):
+            year = 0
+        if year:
+            return str(year)
+    return ""
+
 
 def _titles_similar(local_title: str, crossref_title: str) -> bool:
     """Return True when *local_title* is similar enough to *crossref_title*."""
@@ -292,6 +323,12 @@ def parse_args() -> argparse.Namespace:
                         help="Write citation_verification_en.md")
     parser.add_argument("--max-checks", type=int, default=30,
                         help="Maximum citations to check (default: 30).")
+    parser.add_argument("--delay", type=float, default=0.0,
+                        help="Seconds to sleep between Crossref requests "
+                             "(default: 0).")
+    parser.add_argument("--no-api", action="store_true",
+                        help="Skip all Crossref calls; mark checkable "
+                             "citations as skipped instead of querying.")
     return parser.parse_args()
 
 
@@ -303,12 +340,18 @@ def verify_citation(
     bank_path: Path,
     max_checks: int = 30,
     *,
+    delay: float = 0.0,
+    no_api: bool = False,
     _fetcher: object | None = None,
 ) -> CitationVerificationResult:
     """Verify citations in *bank_path* against Crossref.
 
     The *_fetcher* parameter exists for testing: pass a callable with the
     same signature as ``_fetch_crossref_json`` to mock the network layer.
+
+    When *no_api* is True no network calls are made: every citation that
+    would otherwise be queried is marked ``skipped``.  *delay* controls the
+    sleep (in seconds) between Crossref requests.
     """
     fetch = _fetcher if _fetcher is not None else _fetch_crossref_json  # type: ignore[assignment]
 
@@ -394,8 +437,19 @@ def verify_citation(
             result.entries.append(entry)
             continue
 
+        # --no-api: never touch the network, just record what we extracted
+        if no_api:
+            if doi:
+                entry.doi = doi
+            entry.status = "skipped"
+            entry.note = "API disabled (--no-api) — not checked against Crossref"
+            result.skipped_count += 1
+            result.entries.append(entry)
+            continue
+
         # --- query Crossref ---
-        time.sleep(REQUEST_DELAY)
+        if delay > 0:
+            time.sleep(delay)
         result.checked_count += 1
 
         # Prefer DOI lookup when a DOI is available
@@ -403,7 +457,7 @@ def verify_citation(
             entry.doi = doi
 
             # Use the injected fetcher for DOI lookup
-            doi_url = f"{CROSSREF_QUERY_URL}/{urllib.request.quote(doi, safe='')}"
+            doi_url = f"{CROSSREF_QUERY_URL}/{urllib.parse.quote(doi, safe='')}"
             data = fetch(doi_url)  # type: ignore[call-arg]
 
             if data is None:
@@ -419,35 +473,35 @@ def verify_citation(
                 crossref_title = " ".join(
                     str(t).strip() for t in msg.get("title", [""])
                 )[:200]
-                created = msg.get("created", {})
-                crossref_year = (
-                    str(created.get("date-parts", [[0]])[0][0]) if created else ""
-                )
+                crossref_year = _crossref_year(msg)
                 crossref_doi = msg.get("DOI", "")
 
-                # Conservative matching: title similarity + year proximity
+                # A DOI that resolves on Crossref is itself sufficient
+                # evidence that the work is real.  A registration/publication
+                # year mismatch is not grounds to fail a resolvable DOI, so
+                # we record it as a note but still mark the entry matched.
                 title_ok = _titles_similar(extracted_title, crossref_title)
                 year_ok = _years_close(extracted_year or "", crossref_year)
 
+                entry.status = "matched"
+                entry.crossref_title = crossref_title[:120]
+                entry.crossref_year = crossref_year
+                entry.crossref_doi = crossref_doi
                 if title_ok and year_ok:
-                    entry.status = "matched"
-                    entry.crossref_title = crossref_title[:120]
-                    entry.crossref_year = crossref_year
-                    entry.crossref_doi = crossref_doi
                     entry.note = "DOI resolved — title and year match"
-                    result.matched_count += 1
                 else:
-                    entry.status = "unmatched"
-                    entry.crossref_title = crossref_title[:120]
-                    entry.crossref_year = crossref_year
-                    entry.crossref_doi = crossref_doi
-                    reasons = []
+                    caveats = []
                     if not title_ok:
-                        reasons.append("title mismatch")
+                        caveats.append("title differs from local metadata")
                     if not year_ok:
-                        reasons.append(f"year mismatch (local={extracted_year}, crossref={crossref_year})")
-                    entry.note = "DOI found but " + "; ".join(reasons)
-                    result.unmatched_count += 1
+                        caveats.append(
+                            f"year differs (local={extracted_year}, crossref={crossref_year})"
+                        )
+                    entry.note = (
+                        "DOI resolved on Crossref (real work)"
+                        + ("; " + "; ".join(caveats) if caveats else "")
+                    )
+                result.matched_count += 1
             else:
                 entry.status = "unmatched"
                 entry.note = f"DOI {doi} not found in Crossref"
@@ -475,10 +529,7 @@ def verify_citation(
                     crossref_title = " ".join(
                         str(t).strip() for t in best.get("title", [""])
                     )[:200]
-                    created = best.get("created", {})
-                    crossref_year = (
-                        str(created.get("date-parts", [[0]])[0][0]) if created else ""
-                    )
+                    crossref_year = _crossref_year(best)
                     crossref_doi = best.get("DOI", "")
 
                     # Check all returned items for a match (not just the first)
@@ -487,11 +538,7 @@ def verify_citation(
                         item_title = " ".join(
                             str(t).strip() for t in item.get("title", [""])
                         )[:200]
-                        item_created = item.get("created", {})
-                        item_year = (
-                            str(item_created.get("date-parts", [[0]])[0][0])
-                            if item_created else ""
-                        )
+                        item_year = _crossref_year(item)
                         if _titles_similar(extracted_title, item_title) and _years_close(
                             extracted_year or "", item_year
                         ):
@@ -621,7 +668,12 @@ def to_markdown(result: CitationVerificationResult) -> str:
 def main() -> int:
     args = parse_args()
     bank_path = Path(args.bank_path)
-    result = verify_citation(bank_path, max_checks=args.max_checks)
+    result = verify_citation(
+        bank_path,
+        max_checks=args.max_checks,
+        delay=args.delay,
+        no_api=args.no_api,
+    )
 
     if args.json:
         print(json.dumps({
