@@ -106,6 +106,35 @@ class IntegrityAuditTests(unittest.TestCase):
         dim = audit_integrity_patterns(tmp, {})
         self.assertTrue(any("No manuscript" in f.what_was_found for f in dim.findings))
 
+    def test_orphan_citation_splits_grouped_cites(self) -> None:
+        # Regression: \cite{a,b,c} must be split into individual keys before the
+        # orphan check; the whole "a,b,c" string is not a single bib key.
+        tmp = _make_out_dir(**{
+            "final_paper/main.tex": (
+                r"""\section{Intro}
+Background work \cite{a,b,c} and a single cite \cite{a}. """ + "x " * 60 + "\n"
+            ),
+            "final_paper/references.bib": (
+                "@article{a, title={A}}\n@article{b, title={B}}\n@article{c, title={C}}\n"
+            ),
+        })
+        dim = audit_integrity_patterns(tmp, {})
+        joined = " ".join(f.what_was_found for f in dim.findings)
+        self.assertNotIn("Orphan", joined)
+
+    def test_orphan_citation_still_flags_real_orphan(self) -> None:
+        tmp = _make_out_dir(**{
+            "final_paper/main.tex": (
+                r"""\section{Intro}
+Grouped \cite{a,missingkey} here. """ + "x " * 60 + "\n"
+            ),
+            "final_paper/references.bib": "@article{a, title={A}}\n",
+        })
+        dim = audit_integrity_patterns(tmp, {})
+        joined = " ".join(f.what_was_found for f in dim.findings)
+        self.assertIn("Orphan", joined)
+        self.assertIn("missingkey", joined)
+
     def test_audit_process_language_flags_meta_narrative(self) -> None:
         tmp = _make_out_dir(**{
             "final_paper/main.tex": (

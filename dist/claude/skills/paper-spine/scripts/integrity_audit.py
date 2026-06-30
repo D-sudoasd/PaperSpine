@@ -446,7 +446,13 @@ def audit_integrity_patterns(out_dir: Path, _config: dict) -> AuditDimension:
     if bib_paths:
         bib_text = "\n".join(p.read_text(encoding="utf-8", errors="ignore") for p in bib_paths)
         bib_keys = set(re.findall(r"@\w+\{([^,]+)", bib_text))
-        orphans = [k for k in CITATION_RE.findall(manuscript_text) if k not in bib_keys]
+        # A single \cite{a,b,c} groups several keys; split on commas before
+        # comparing, or the whole "a,b,c" string is a false orphan.
+        cited_keys: list[str] = []
+        for group in CITATION_RE.findall(manuscript_text):
+            cited_keys.extend(key.strip() for key in group.split(",") if key.strip())
+        seen: set[str] = set()
+        orphans = [k for k in cited_keys if k not in bib_keys and not (k in seen or seen.add(k))]
         if orphans:
             counter += 1
             dim.findings.append(AuditFinding(
