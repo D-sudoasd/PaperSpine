@@ -289,6 +289,13 @@ python -m pytest tests -q
 
 ## Updating PaperSpine
 
+> ⚠️ **Upgrading from 3.x to 4.0 requires a manual reinstall — self-update does not apply.** 4.0 collapses the former 12 sub-skills into a single `paper-spine` orchestrator, so the 3.x updater rejects the new package as "missing 11 skills" and aborts. **Run the installer once, with `--clean-legacy`** (otherwise the old worker skills linger and hosts like cc switch show a mix of old and new):
+>
+> - Windows: `powershell -File install.ps1 -CleanLegacy`
+> - macOS/Linux: `bash install.sh --clean-legacy`
+>
+> Afterwards `--check-only` reports `already latest: 4.0.0` and self-update works again. From 4.0 on the updater is forward-compatible and no longer aborts on things like a renamed doc.
+
 After the first install, to check or update the local install, route `paper-spine` through its update path (`/paperspine update`), which runs:
 
 ```powershell
@@ -301,12 +308,7 @@ It compares the version recorded in `~/.paperspine/install_state.json` with the 
 python src/scripts/paperspine_update.py --check-only
 ```
 
-**Upgrade failing? (old versions self-updating report "incomplete")** If you are on an older version and `paperspine_update.py --yes` reports `Downloaded PaperSpine package is incomplete`, it is because the **old validator rejects the new package** (issue #13) — the upgrade runs your *local, old* validator. A one-time manual reinstall fixes it, and self-update works again afterwards:
-
-- Windows: `powershell -File install.ps1` (add `-CleanLegacy` to remove the old split skills)
-- macOS/Linux: `bash install.sh` (add `--clean-legacy`)
-
-Or copy `dist/claude/skills/*` and `dist/claude/commands/paperspine.md` from `main` into `~/.claude/skills/` and `~/.claude/commands/`. From 4.0.0 on, the updater only warns (never aborts) on optional files (README / installers), so this no longer recurs.
+**Still reporting "incomplete"?** Any old version self-updating to a newer one and reporting `Downloaded PaperSpine package is incomplete` hits the same cause: the **old validator rejects the new package** (the upgrade runs your *local, old* validator — issue #13). The manual reinstall above fixes it; you can also copy `dist/claude/skills/*` and `dist/claude/commands/paperspine.md` from `main` into `~/.claude/skills/` and `~/.claude/commands/`. From 4.0.0 on the updater only warns (never aborts) on optional files (README / installers), so this no longer recurs.
 
 ## What PaperSpine Tries To Prevent
 

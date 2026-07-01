@@ -291,6 +291,13 @@ python -m pytest tests -q
 
 ## 更新 PaperSpine
 
+> ⚠️ **从 3.x 升级到 4.0 请手动重装，自更新不适用。** 4.0 把原来的 12 个子技能收敛成单一 `paper-spine` orchestrator，3.x 的更新器会把新包判为「缺 11 个 skill」而中止。**跑一次安装脚本，务必带 `--clean-legacy`**（否则旧的 worker skill 会残留，cc switch 里会新旧混杂）：
+>
+> - Windows：`powershell -File install.ps1 -CleanLegacy`
+> - macOS/Linux：`bash install.sh --clean-legacy`
+>
+> 装完 `--check-only` 会显示 `already latest: 4.0.0`，之后自更新恢复正常。4.0 起的更新器已前向容错，不会再因文档改名等原因中止。
+
 第一次安装之后，如果想检查或更新本地安装，可以在宿主里让 `paper-spine` 走 update 路由（`/paperspine update`），它会运行：
 
 ```powershell
@@ -303,12 +310,7 @@ python src/scripts/paperspine_update.py --yes
 python src/scripts/paperspine_update.py --check-only
 ```
 
-**升级失败?（旧版本自更新报 "incomplete"）** 如果你停留在较旧版本，`paperspine_update.py --yes` 报 `Downloaded PaperSpine package is incomplete`，这是**旧版校验器拒收新版包**导致的（issue #13）——升级时跑的是本地旧校验器。一次性手动重装即可打通，之后自更新恢复正常：
-
-- Windows：`powershell -File install.ps1`（可加 `-CleanLegacy` 清理旧的分散 skill）
-- macOS/Linux：`bash install.sh`（可加 `--clean-legacy`）
-
-或直接从 `main` 复制 `dist/claude/skills/*` 与 `dist/claude/commands/paperspine.md` 到 `~/.claude/skills/`、`~/.claude/commands/`。4.0.0 起的更新器对可选文件（README / 安装脚本）只告警不中止，此问题不再复发。
+**仍报 "incomplete"?** 任何旧版本自更新到新版报 `Downloaded PaperSpine package is incomplete`，都是**旧版校验器拒收新版包**导致的（升级跑的是本地旧校验器，issue #13）。按上面的手动重装即可打通；也可直接从 `main` 复制 `dist/claude/skills/*` 与 `dist/claude/commands/paperspine.md` 到 `~/.claude/skills/`、`~/.claude/commands/`。4.0.0 起的更新器对可选文件（README / 安装脚本）只告警不中止，此问题不再复发。
 
 ## PaperSpine 试图避免的问题
 
