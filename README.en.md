@@ -2,8 +2,9 @@
 
 [English](README.en.md) | [中文](README.md)
 
-
 [**PaperSpine 使用讲解视频（Bilibili）**](https://www.bilibili.com/video/BV1rjVa6ZEYu)
+
+[**🌍 Stargazer Atlas · see which universities and cities use PaperSpine**](https://wubing2023.github.io/PaperSpine/)
 
 
 > PaperSpine is a contribution-first, reviewer-aware academic writing system for four hosts: Claude Code, Codex, OpenClaw, and Hermes CLI.

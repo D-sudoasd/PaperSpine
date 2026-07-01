@@ -2,8 +2,11 @@
 
 [English](README.en.md) | [中文](README.md)
 
-
 [**PaperSpine 使用讲解视频（Bilibili）**](https://www.bilibili.com/video/BV1rjVa6ZEYu)
+
+配音贡献：[https://github.com/YiShanZheng](https://github.com/YiShanZheng)
+
+[**🌍 订阅者星图 · 看看哪些高校和城市在用 PaperSpine**](https://wubing2023.github.io/PaperSpine/)
 
 
 > PaperSpine 是一个以「贡献为先、面向审稿人」为核心的学术写作系统，支持 Claude Code、Codex、OpenClaw 和 Hermes CLI 四个宿主。
