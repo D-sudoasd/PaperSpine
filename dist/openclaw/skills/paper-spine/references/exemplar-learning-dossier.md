@@ -150,6 +150,17 @@ Save as `paper_rewriting_output/result_narrative_templates.md`.
 | generalization | | | | | | |
 | interpretability | | | | | | |
 | biological analysis | | | | | | |
+| microstructure | | | | | | |
+| processing_effect | | | | | | |
+| mechanical_property | | | | | | |
+| fracture_or_failure | | | | | | |
+| mechanism | | | | | | |
+| literature_comparison | | | | | | |
+
+**Genre note:** for experimental metals / materials papers, prefer filling
+`microstructure`, `processing_effect`, `mechanical_property`, `mechanism`, and
+`literature_comparison` before inventing ML-style `ablation` / `benchmark` rows.
+Keep CS types when the manuscript is computational/methods-first.
 
 ## Anti-Metric-Dump Rules
 

@@ -81,18 +81,20 @@ placeholder.
 ## Highlights Format
 
 Follow the common Elsevier-style highlights format unless the target journal has
-stricter rules:
+stricter rules (always prefer `official_urls` / `target_journal_research.md` /
+`research_dossier.md` over memory):
 
 - 3 to 5 bullet points.
-- Each bullet no more than 85 characters, including spaces.
+- Each bullet no more than 85 characters, including spaces (verify venue cap).
 - One finding or implication per bullet.
 - Use present tense where natural.
 - No citations, including `\cite{}`, `[@key]`, or numbered citations like `[1]`.
 - No undefined abbreviations, jargon, TODO markers, or double-bracket
   placeholders.
 - Submission-facing highlights contain only bullet lines, not rationale notes.
+- Prefer **results the paper actually established**, not vague motivation.
 
-Use this shape:
+Use this shape (generic):
 
 ```markdown
 # Highlights
@@ -100,6 +102,16 @@ Use this shape:
 - Antimicrobial peptides offer alternatives against resistant bacteria.
 - The review maps peptide sources, functions, and mechanisms.
 - Peptide redesign supports future anti-resistance drug discovery.
+```
+
+Experimental materials / metals example shape (replace with real claims):
+
+```markdown
+# Highlights
+
+- Dual precipitate populations form under a controlled temper path in alloy X.
+- Yield strength rises while room-temperature ductility remains comparable.
+- Strengthening correlates with refined precipitate spacing under stated limits.
 ```
 
 The Chinese highlights should be a clean bilingual review version, not a
@@ -113,9 +125,13 @@ Use this order:
 1. Date line.
 2. Editor salutation.
 3. Submission sentence with manuscript title and manuscript type.
-4. Brief journal-fit paragraph using `research_dossier.md` when available.
+4. Brief journal-fit paragraph using `research_dossier.md` and, when present,
+   `target_journal_research.md` (why *this* venue: scope, article type,
+   experimental/theoretical fit). For Acta-class materials papers, name the
+   processing–structure–property contribution in plain language — not generic
+   “we study materials.”
 5. Two or three contribution sentences, derived from the same claim sources as
-   the highlights but not copied verbatim.
+   the highlights / `confirmed_contribution.md` but not copied verbatim.
 6. Originality and not-under-consideration statement.
 7. Conflict of interest statement.
 8. Corresponding author line with placeholders where needed.

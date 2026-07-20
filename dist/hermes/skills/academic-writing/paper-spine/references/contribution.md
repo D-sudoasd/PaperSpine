@@ -26,7 +26,7 @@ Save at `paper_rewriting_output/confirmed_contribution.md`. It has **four requir
 | Field | Content |
 |---|---|
 | Main contribution statement | The single sentence the whole paper defends. One claim, specific, falsifiable. |
-| Contribution type | new method / new dataset / new theory / new empirical finding / new system / new analysis-or-benchmark / new application. Pick the dominant one. |
+| Contribution type | Pick the dominant one. CS/ML examples: new method / new dataset / new theory / new empirical finding / new system / new analysis-or-benchmark / new application. **Experimental materials examples:** new process route / new alloy or composition design / new mechanism interpretation / new structure–property link / new characterization dataset or protocol / new multi-scale evidence package. |
 | One-sentence reviewer payoff | If the reviewer remembers one thing, it is this. Phrase as the value to the field, not the activity performed. |
 
 ## Why This Contribution Is Needed
@@ -44,7 +44,7 @@ Save at `paper_rewriting_output/confirmed_contribution.md`. It has **four requir
 |---|---|
 | Design response | The core idea/mechanism that addresses the gap. The "how", tied directly to the challenge above. |
 | Evidence required | What evidence a skeptical reviewer would demand to believe the Core contribution. List it before checking what you have. |
-| Evidence available | The evidence you actually have (experiments, proofs, datasets, ablations) that meets the "required" list. |
+| Evidence available | The evidence you actually have (experiments, proofs, datasets, ablations, **or for materials: composition/processing series, microscopy, diffraction, mechanical curves, replicates**) that meets the "required" list. |
 | Evidence missing | The gap between required and available. If non-empty, the Core contribution must be softened or more work is needed. Honest entry here prevents over-claiming. |
 
 ## Claim Boundary
@@ -84,10 +84,24 @@ WHY a ladder: each rung must be necessary for the next. If the gap does not foll
 Methods do not just describe; they make the Design response *believable*. Each design choice should answer a "why this and not the obvious alternative?".
 
 - [ ] Every major design choice maps to the `Concrete challenge` it overcomes (not "we used X" but "X because the challenge is Y").
-- [ ] Inputs, architecture/derivation, and objective are each justified, not merely stated.
-- [ ] Evaluation design (splits, baselines, metrics) is chosen to produce exactly the `Evidence required`, not whatever is convenient.
-- [ ] Reproducibility load-bearing details are present (settings, data provenance, hyperparameters) so a reviewer cannot dismiss the result as unverifiable.
+- [ ] Inputs, architecture/derivation **or** composition/processing/characterization design, and objective are each justified, not merely stated.
+- [ ] Evaluation design (splits, baselines, metrics **or** property tests, control conditions, literature comparison) is chosen to produce exactly the `Evidence required`, not whatever is convenient.
+- [ ] Reproducibility load-bearing details are present (settings, data provenance, hyperparameters; **for experimental materials:** heat-treatment windows, stoichiometry/composition verification, equipment models, sample count n) so a reviewer cannot dismiss the result as unverifiable.
 - [ ] Nothing in Methods quietly assumes a claim listed under `Claims to soften or avoid`.
+
+### Example — experimental metals contribution package (illustrative only)
+
+Not a template to copy numbers from. Shows the *shape* of a filled contribution for
+an Acta-class PSP paper:
+
+| Field | Example content |
+|---|---|
+| Main contribution statement | Controlled tempering that yields a dual precipitate population increases yield strength while retaining ductility in alloy X under the stated heat-treatment window. |
+| Contribution type | new process route + structure–property link (dominant: process route) |
+| Evidence required | Verified composition; time–temperature schedule; SEM/TEM or equivalent precipitate evidence; tensile curves with n≥3; comparison to baseline temper |
+| Evidence available | Same as required except TEM is available only for two conditions |
+| Evidence missing | Atom-probe chemistry of the finer population — soften any claim that asserts exact chemistry |
+| Claims to soften or avoid | Do not claim universality across all alloys or service temperatures not tested |
 
 ### CHECKLIST — Results as validation
 

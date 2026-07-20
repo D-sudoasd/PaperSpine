@@ -94,6 +94,25 @@ Sample 10 claims and rate their strength:
 
 ---
 
+## Hard experimental journals (Acta-class materials, metals, metallurgy)
+
+When exemplars are from *Acta Materialia*-like experimental venues, calibrate
+style_profile with these defaults **unless** the three exemplars clearly disagree
+(always prefer measured exemplar stats over this checklist):
+
+| Dimension | Typical habit to look for | Transfer rule for blueprints |
+|---|---|---|
+| Intro length | Often shorter % of total than CS surveys | Do not pad Intro with long related-work digressions |
+| Experimental | Dense parameters; standalone section | Never recommend merging Experimental into Results |
+| Results | Figure-first; multi-panel micrographs + property plots | Every Results unit maps to Fig/Table in `results_validation.md` |
+| Discussion | Mechanism + limits; may be separate or combined | Bound claims; separate speculation from measurement |
+| Claim strength | Moderate-to-strong on data; tentative on exclusive mechanisms | Match hedging to characterization resolution |
+| Terminology | alloy/composition, heat treatment, precipitate, yield strength, ductility, wt.% / at.% | Prefer field consensus over ML metaphors (unless paper is computational materials) |
+| Section budget | Usually 4–6 top-level sections (Abstract excluded) | Obey `section_economy_check`; expand thin Experimental instead of deleting it |
+
+Record consensus top-level section count in JS-1 from **venue exemplars**, not
+from ML template papers.
+
 ## Journal-Style FAT Analysis
 
 ```markdown

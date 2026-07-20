@@ -142,6 +142,19 @@ Research tiers:
 
 Output language is `en` or `zh`. When English output is selected, `translation_package=zh` additionally generates a Chinese translation package and a final Chinese Word document.
 
+### Metals / Acta-class experimental journals
+
+PaperSpine remains a general academic orchestrator, but the playbooks now include a **metals / Acta Materialia-class** prior (processing–structure–property) so agents do not default to ML-style ablation/benchmark narratives.
+
+Recommended config:
+
+- `scene=journal`
+- `target_name=Acta Materialia` (or your real venue name)
+- `official_urls`: Guide for Authors and template links
+- `special_requirements`: e.g. `experimental full research article`, `processing-structure-property`, `Highlights 3-5 bullets`, `discipline: metals / metallurgy`
+
+Research loads `references/discipline-metals-acta.md` and should produce `target_journal_research.md` (official rules from live URLs only—do not hardcode stale page limits). Note: `materials_dir` means the **user source-materials folder**, not “materials science.”
+
 ## Methodology Upgrade (V4)
 
 On top of the original motivation thread, V4 introduces three core rules enforced by gates. Motivation is still required (`confirmed_motivation.md`), but it now supports the contribution rather than being the top organizing unit.

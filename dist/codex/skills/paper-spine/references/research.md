@@ -38,27 +38,57 @@ Use `scripts/reference_inventory.py`:
 python scripts/reference_inventory.py . --output-dir paper_rewriting_output --mode local_first
 ```
 
+## Stage 1b — Discipline / venue priors (conditional)
+
+Before or while launching specialist agents, load extra priors when they apply:
+
+1. **Always** read `references/scenario-<scene>.md` (e.g. `scenario-journal.md`).
+2. If `target_name` is non-empty and `scene` is `journal` (or conference with a
+   named venue), follow `references/target-journal-research.md` and write
+   `paper_rewriting_output/target_journal_research.md`. Prefer facts from
+   `official_urls` over memory.
+3. If the run is **metals / metallurgy / Acta-class experimental materials**,
+   also read `references/discipline-metals-acta.md` and apply its PSP spine,
+   Experimental checklist, and citation bias. Detect via:
+   - `target_name` matching (case-insensitive) `acta`, `materialia`,
+     `metallurg`, `scripta materialia`, or common alloy-journal names, **or**
+   - `special_requirements` containing metals / metallurgy / alloy /
+     processing-structure-property / PSP, **or**
+   - user materials clearly experimental alloy PSP work.
+
+Do not invent Elsevier page limits or highlight character counts; record only
+what official pages show.
+
 ## Stage 2 — Three Parallel Specialist Sub-Agents
 
 Launch all three simultaneously. Each agent gets only its own context.
 
 ### Agent A: Scene Analyst → `research_dossier.md`
 
-Context: `scene`, `target_name`, `official_urls`, `source_index.md`, scene reference file.
+Context: `scene`, `target_name`, `official_urls`, `source_index.md`, scene
+reference file, plus `discipline-metals-acta.md` / `target_journal_research`
+notes when Stage 1b applied.
 
-Sections: Venue Requirements, Review Criteria, Accepted Paper Patterns, Constraints for This Paper.
+Sections: Venue Requirements, Review Criteria, Accepted Paper Patterns,
+Constraints for This Paper.
 
 ### Agent B: Exemplar Learner → `exemplar_learning_dossier.md`
 
-Context: `tier`, `source_index.md`, scene reference path.
+Context: `tier`, `source_index.md`, scene reference path, and materials result
+types from `exemplar-learning-dossier.md` when Stage 1b materials prior applies.
 
-Sections: Exemplar Inventory table, Structural Patterns, Rhetorical Patterns, Language Patterns.
+Sections: Exemplar Inventory table, Structural Patterns, Rhetorical Patterns,
+Language Patterns. Fill result-narrative types appropriate to the genre
+(microstructure / processing / property for metals; benchmark / ablation for ML).
 
 ### Agent C: SOTA Mapper → `sota_gap_map.md`
 
 Context: `tier`, `source_index.md`, `user_motivation` (if set).
 
 Table: Candidate Contribution | What SOTA Already Does | User Evidence | Real Gap | Claim Strength | Risk. Plus Gap Summary.
+
+For materials priors, frame gaps as process windows, mechanism disputes, or
+property trade-offs — not only accuracy leaderboards.
 
 ## Stage 3 — Merge
 
@@ -75,3 +105,4 @@ revises, or writes their own motivation.
 - `sota_gap_map.md`
 - `motivation_options_after_research.md`
 - `confirmed_motivation.md` (after user confirmation)
+- `target_journal_research.md` when `target_name` is non-empty (journal/conference venue research)
