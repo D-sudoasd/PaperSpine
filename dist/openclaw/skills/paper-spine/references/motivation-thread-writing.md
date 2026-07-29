@@ -113,15 +113,15 @@ This paper addresses [specific problem] because [why it matters], by [design res
 | Arc Element | Content | Evidence Source | Required Section |
 |---|---|---|---|
 | Field problem | | | Introduction P1 |
-| Measurement/computational bottleneck | | | Introduction P2 |
-| Prior method limitation | | | Introduction P3 |
+| Measurement/computational **or processing–structure** bottleneck | | | Introduction P2 |
+| Prior method / process / alloy limitation | | | Introduction P3 |
 | Specific gap | | | Introduction P4 |
 | Design response | | | Introduction P5 / Methods |
 | Primary evidence | | | Results 1 |
-| Component evidence | | | Results 2 |
-| Generalization evidence | | | Results 3 |
-| Biological interpretability | | | Results 4-5 |
-| Final interpretation | | | Discussion |
+| Component / control evidence | | | Results 2 |
+| Generalization or condition-series evidence | | | Results 3 |
+| Mechanism / structure–property interpretation | | | Results 4–5 or Discussion |
+| Final interpretation + claim boundary | | | Discussion |
 
 ## Introduction-to-Discussion Closure Map
 
@@ -178,18 +178,20 @@ The Introduction should not be a literature list. It should create necessity.
 
 Typical move order:
 
-1. Establish the biological or computational importance.
-2. Explain why the task is hard.
-3. Show what prior methods solved.
+1. Establish field importance (application, safety, performance, scientific puzzle — biological, computational, **or structural-materials** as fits the paper).
+2. Explain why the task is hard (measurement, mechanism, processing window, multi-scale coupling, etc.).
+3. Show what prior methods, alloys, or processes solved.
 4. Identify what remains unresolved.
-5. Present the method as a direct response.
+5. Present the design / process / method as a direct response.
 6. Preview the evidence that will support the response.
 
 The paragraph openings should make the motivation progressively narrower: field problem, bottleneck, prior-work limit, unresolved gap, response, and testable promise.
 
 ### Methods
 
-Methods should not read like code documentation. Each design choice should answer a motivation:
+Methods should not read like code documentation **or an unmotivated lab notebook**. Each design choice should answer a motivation.
+
+**Computational / ML papers:**
 
 - Why this input?
 - Why this architecture?
@@ -197,7 +199,15 @@ Methods should not read like code documentation. Each design choice should answe
 - Why this evaluation split?
 - Why these metrics?
 
-When subsection headings are editable, prefer headings that identify the design rationale or evaluation purpose in natural journal language. Avoid repeating the same motivation term in every heading; use the first sentence to carry the motivation when a neutral heading is clearer.
+**Experimental materials / metals papers:**
+
+- Why this composition / alloy system?
+- Why this processing or heat-treatment path (and not the obvious alternative)?
+- Why these characterization techniques (resolution vs claim)?
+- Why these property tests and conditions?
+- Why this sample size / replicate plan / control condition?
+
+When subsection headings are editable, prefer headings that identify the design rationale or evaluation purpose in natural journal language. Avoid repeating the same motivation term in every heading; use the first sentence to carry the motivation when a neutral heading is clearer. For experimental journals, keep a dedicated **Experimental / Materials and methods** section even if short — expand detail rather than merging into Results.
 
 ### Results
 

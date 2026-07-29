@@ -33,7 +33,7 @@ stage from `references/` rather than requiring a separate skill invocation:
 |---|---|
 | Intake / config | `references/intake.md` |
 | Resume / checkpoint | `references/resume.md` |
-| Research | `references/research.md` |
+| Research | `references/research.md` (+ `discipline-metals-acta.md` when metals/Acta prior applies) |
 | Citation | `references/citation.md` |
 | Rewrite | `references/rewrite.md` |
 | Build | `references/build.md` |

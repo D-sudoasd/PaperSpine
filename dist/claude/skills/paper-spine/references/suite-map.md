@@ -7,6 +7,7 @@ PaperSpine is a single orchestrator skill. Each stage reads its playbook from
 |---|---|
 | `references/intake.md` | collect configuration |
 | `references/research.md` | index local references, research target scene, and learn examples |
+| `references/discipline-metals-acta.md` | optional prior for metals / Acta-class experimental materials (PSP spine) |
 | `references/citation.md` | build citation support candidates |
 | `references/rewrite.md` | rewrite an existing draft |
 | `references/build.md` | build from a materials folder |

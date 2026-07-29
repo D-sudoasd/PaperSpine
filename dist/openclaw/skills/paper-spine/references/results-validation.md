@@ -33,6 +33,15 @@ Write this Markdown table to `paper_rewriting_output/results_validation.md`:
 | 4.3 Ablation of module M | C2: module M is the source of the gain | Removing M drops acc 88.4 to 85.9 | Table 3 | Single dataset, single seed-averaged run | M contributes the majority of the C1 gain | Do NOT claim M is necessary for other architectures |
 | 4.4 Efficiency | C3: method is cheaper at inference | 1.7x fewer FLOPs at equal accuracy | Fig. 4 | Measured on one GPU, batch=1 | Lower inference cost at matched accuracy | Do NOT claim training-time savings (not measured) |
 
+**Also valid — experimental materials / metallurgy (use when the paper is PSP / alloy / process, not ML):**
+
+| Results Unit | Contribution Claim Tested | Result/Evidence | Figure/Table | Confirmatory Condition | Allowed Interpretation | Interpretation NOT Allowed |
+|---|---|---|---|---|---|---|
+| 3.1 Precipitate evolution after temper T2 | C1: dual precipitate population forms under T2 | Mean particle size d1/d2 and volume fraction from image analysis | Fig. 3a–c | Alloy X, T2 = … °C / … h; ≥5 fields per condition | T2 produces a finer second population vs baseline temper | Do NOT claim all heat treatments or alloys form the same dual population |
+| 3.2 Tensile response | C1/C2: strength–ductility trade-off improves vs baseline | YS, UTS, elongation with SD (n=3) | Fig. 4 / Table 2 | Quasi-static RT; same grain-size batch | Under T2, YS rises while elongation stays within … of baseline | Do NOT claim high-temperature or cyclic performance (not tested) |
+| 3.3 Fracture / failure mode | C2: ductile retention | Dimple morphology vs baseline | Fig. 5 | Same tensile specimens as 3.2 | Fracture remains ductile under T2 | Do NOT claim toughness without fracture-mechanics tests |
+| 3.4 Mechanism discussion anchor | C1 boundary | Correlate size/spacing of precipitates with YS increment (Orowan or stated model) | Fig. 3 + Fig. 4 | Semi-quantitative; model assumptions stated | Strengthening is consistent with observed spacing | Do NOT assert exclusive mechanism if chemistry of particles was not measured |
+
 ## Why Each Column Exists
 
 - **Results Unit** — the actual subsection heading/number. Anchors the row to a

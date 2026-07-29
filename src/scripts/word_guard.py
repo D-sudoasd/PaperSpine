@@ -8,6 +8,7 @@ import json
 import os
 import re
 import shutil
+import sys
 import tempfile
 import zipfile
 from dataclasses import dataclass
@@ -971,6 +972,13 @@ def to_markdown(result: WordGuardResult) -> str:
 
 
 def main() -> int:
+    # Chinese report fields (first paragraph, titles) must survive Windows charmap
+    # consoles (GHA cp1252 / local cp936); matches submission_check pattern.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8")
+
     args = parse_args()
     docx_path = Path(args.docx_path)
 

@@ -144,6 +144,19 @@ PaperSpine 有两条平级主流程：
 
 输出语言为 `en` 或 `zh`。选择英文输出时，可通过 `translation_package=zh` 额外生成中文翻译包，并产出最终中文 Word 文档。
 
+### 金属材料 / Acta 类实验期刊
+
+PaperSpine 仍是通用学术写作编排器，但 playbook 已加入**实验金属材料 / Acta Materialia 类**先验（processing–structure–property），避免默认写成 ML 的 ablation/benchmark 叙事。
+
+推荐配置示例：
+
+- `scene=journal`
+- `target_name=Acta Materialia`（或真实目标刊名）
+- `official_urls`：作者指南与模板链接
+- `special_requirements`：如 `experimental full research article`、`processing-structure-property`、`Highlights 3-5 bullets`、`discipline: metals / metallurgy`
+
+研究阶段会读取 `references/discipline-metals-acta.md`，并要求产出 `target_journal_research.md`（官方要求以链接现查为准，不写死过期页数）。注意：`materials_dir` 表示**用户素材文件夹**，不是“材料学”学科名。
+
 ## 方法论升级（V4）
 
 V4 在原有的 motivation 主线之上，引入三条由关卡强制执行的核心规则。motivation 仍然必需（`confirmed_motivation.md`），但它现在服务于「贡献」，而不再是顶层组织单元。
