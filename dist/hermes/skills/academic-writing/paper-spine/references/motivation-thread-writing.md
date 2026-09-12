@@ -28,12 +28,23 @@ plan or the review process.)
 
 Before building the motivation thread model, create or verify `paper_rewriting_output/confirmed_motivation.md`. The user's confirmed motivation is the spine. Exemplar papers may teach rhetorical moves, but they must not choose the paper's motivation for the user.
 
-There are two allowed intake paths:
+There are three allowed intake paths:
 
 1. If the user provides a clear motivation and confirms it, save it directly as `confirmed_motivation.md`.
-2. If the user does not provide one, infer 3-5 options from the draft and evidence, save `motivation_options.md`, and stop for user selection or editing.
+2. If `confirmed_motivation.md` already records the user's explicit choice, its
+   source, and the target/scope it covered, verify that the current run has the
+   same scope and reuse it. Ask again only when the scope or evidence has changed,
+   or the confirmation provenance is missing.
+3. If the user does not provide one, infer 3-5 options from the draft and evidence, save `motivation_options.md`, and stop for user selection or editing.
 
-Do not proceed to section blueprints or manuscript rewriting while only `motivation_options.md` exists.
+The current conversation or a traceable prior run record may supply the explicit
+choice for path 2 even when `confirmed_motivation.md` has not yet been written;
+faithfully record that choice and its source before proceeding. The initial
+`user_motivation` config value is context only, not an approval record. Do not
+proceed to section blueprints or manuscript rewriting while only
+`motivation_options.md` exists and no traceable explicit author choice has been
+recorded. A materially changed scope or meaning requires a fresh author
+decision.
 
 ## Motivation Options Template
 
@@ -64,7 +75,7 @@ Save as `paper_rewriting_output/confirmed_motivation.md`.
 
 | Field | Content |
 |---|---|
-| Source | user-provided / selected option / edited option |
+| Source | user-provided / selected option / edited option / traceable current-session or prior-run decision |
 | Confirmed motivation statement | |
 | One-sentence red thread | |
 | Field problem | |

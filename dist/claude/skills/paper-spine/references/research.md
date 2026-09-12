@@ -5,8 +5,11 @@ This file is the canonical stage playbook for the paper-spine orchestrator.
 ## Purpose
 
 Learn the target scene, index local references, study strong examples, map SOTA
-gaps, and produce user-confirmable motivation options. Research must complete
-before the user confirms the controlling motivation.
+gaps, and either produce motivation options or verify an existing explicit
+author choice. Research must complete before accepting a new post-research
+motivation decision. An existing choice may be carried forward only when the
+current research has not materially changed its scope or meaning; record that
+choice and its source in `confirmed_motivation.md` before running the gate.
 
 ## Literature Retrieval Priority Protocol
 
@@ -83,7 +86,8 @@ Language Patterns. Fill result-narrative types appropriate to the genre
 
 ### Agent C: SOTA Mapper → `sota_gap_map.md`
 
-Context: `tier`, `source_index.md`, `user_motivation` (if set).
+Context: `tier`, `source_index.md`, `user_motivation` (if set; initial context,
+not confirmation).
 
 Table: Candidate Contribution | What SOTA Already Does | User Evidence | Real Gap | Claim Strength | Risk. Plus Gap Summary.
 
@@ -92,9 +96,13 @@ property trade-offs — not only accuracy leaderboards.
 
 ## Stage 3 — Merge
 
-Produce `style_profile.md` and `motivation_options_after_research.md`. Stop for
-user confirmation. Write `confirmed_motivation.md` only after the user chooses,
-revises, or writes their own motivation.
+Produce `style_profile.md` and `motivation_options_after_research.md`. Before
+blocking, check the current conversation and traceable run records for an
+explicit author choice of the same motivation. If one exists and research did
+not materially change its scope or meaning, faithfully record that choice and
+its source in `confirmed_motivation.md`, then run the motivation gate. Otherwise
+stop for the author to choose, revise, or write a motivation. Do not auto-select
+or treat `user_motivation` alone as approval.
 
 ## Required Outputs
 
@@ -104,5 +112,6 @@ revises, or writes their own motivation.
 - `style_profile.md`
 - `sota_gap_map.md`
 - `motivation_options_after_research.md`
-- `confirmed_motivation.md` (after user confirmation)
+- `confirmed_motivation.md` (after a new explicit author choice or a verified,
+  traceable existing choice)
 - `target_journal_research.md` when `target_name` is non-empty (journal/conference venue research)

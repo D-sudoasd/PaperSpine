@@ -1,14 +1,20 @@
 ---
 allowed-tools: Bash(powershell:*), Bash(powershell.exe:*), Bash(pwsh:*), Bash(cmd:*), Bash(bash:*), Bash(sh:*), Bash(chmod:*)
-description: Start PaperSpine with automatic intake UI when configuration is missing
+description: Start PaperSpine with resumable, host-compatible intake
 ---
 
 Start the PaperSpine workflow for the current project.
 
 If `paper_rewriting_output/paper_spine_config.json` is missing or incomplete,
-route through the `paper-spine` skill and launch the PaperSpine intake UI
-automatically.
-Do not hand-write the configuration.
+route through the `paper-spine` skill, inspect the existing progress, and use a
+host-permitted intake path. A valid existing configuration may be reused. The
+bundled intake UI is optional: launch it once when the installed launcher is
+available, otherwise use the concise numbered/text fallback for the missing
+fields. Do not ask the user to hand-write JSON. If the configuration remains
+missing after the permitted intake attempt, leave the intake gate pending and
+report what is still needed; do not infer approval from a timeout or an
+unfinished UI window. Motivation, contribution, and other author gates remain
+explicit decisions.
 
 ## Platform-specific launcher
 
@@ -23,11 +29,8 @@ if (-not (Test-Path -LiteralPath $launcher)) {
 if (-not (Test-Path -LiteralPath $config)) {
   powershell.exe -NoProfile -ExecutionPolicy Bypass -File $launcher -OutputDir "paper_rewriting_output"
 }
-for ($i = 0; $i -lt 120 -and -not (Test-Path -LiteralPath $config); $i++) {
-  Start-Sleep -Seconds 5
-}
 if (-not (Test-Path -LiteralPath $config)) {
-  throw "PaperSpine intake config was not created yet. Finish the opened PowerShell UI window, then rerun /paperspine."
+  throw "PaperSpine intake is pending. Complete the permitted UI or use the numbered/text fallback, then rerun /paperspine."
 }
 Get-Content -LiteralPath $config -Raw
 ```
@@ -48,13 +51,8 @@ if [ ! -f "$CONFIG" ]; then
   bash "$LAUNCHER" "paper_rewriting_output"
 fi
 
-for i in $(seq 1 120); do
-  if [ -f "$CONFIG" ]; then break; fi
-  sleep 5
-done
-
 if [ ! -f "$CONFIG" ]; then
-  echo "PaperSpine intake config was not created yet. Finish the opened terminal window, then rerun /paperspine." >&2
+  echo "PaperSpine intake is pending. Complete the permitted UI or use the numbered/text fallback, then rerun /paperspine." >&2
   exit 1
 fi
 

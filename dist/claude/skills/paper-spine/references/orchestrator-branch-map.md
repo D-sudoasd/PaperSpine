@@ -14,9 +14,12 @@ missing.
    Gate: `research`.
 3. `references/citation.md`: build `citation_support_bank.md` for literature
    statements in Introduction/Discussion/background. Gate: `citation`.
-4. User confirmation: write `confirmed_motivation.md` only after the user
-   chooses or revises the motivation. Gate: `motivation_confirmation`
-   (BLOCKED until user confirms).
+4. Motivation decision: verify an explicit author choice in the current
+   conversation or a traceable run record. If the choice is unchanged by the
+   current research, record it in `confirmed_motivation.md` and run the gate;
+   otherwise present the options and wait for the author to choose or revise.
+   The initial `user_motivation` config value is not approval. Gate:
+   `motivation_confirmation` (BLOCKED only when no traceable choice exists).
 5. Humanize (conditional): apply tier-specific stylistic constraints when
    `humanize_tier` is `light`, `medium`, or `heavy`. No separate gate; applied
    during writing.
@@ -47,7 +50,7 @@ playbook:
 | `intake` | PENDING | `references/intake.md` |
 | `research` | PENDING | `references/research.md` |
 | `citation` | PENDING | `references/citation.md` |
-| `motivation_confirmation` | BLOCKED | Stop; present options to user and wait for confirmation |
+| `motivation_confirmation` | BLOCKED | No traceable author choice; present options and wait |
 | `motivation_confirmation` | PENDING | `references/research.md` |
 | `planning` | PENDING | `references/rewrite.md` or `references/build.md` |
 | `build_from_materials` | PENDING | `references/build.md` |

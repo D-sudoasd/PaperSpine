@@ -10,7 +10,10 @@ Audit all PaperSpine outputs before declaring the workflow complete.
 
 1. Artifact completeness.
 2. Reference material workspace has `source_index.md`.
-3. Motivation was user-confirmed after research.
+3. Motivation was explicitly author-confirmed after research, or an unchanged
+   explicit author choice from the current conversation/traceable run record was
+   verified and recorded with its source. The initial `user_motivation` config
+   value alone is not confirmation.
 4. `writing_rationale_matrix.md` exists, is ordered, and covers whole-work
    framework + task-specific writing units.
 5. No append-only or shallow revision for substantive rewrite tasks.

@@ -58,9 +58,14 @@ and are not user entry points.
 ## Operating Principle
 
 PaperSpine is a research-writing workflow, not a prose patcher. Its job is to
-learn the target scene and strong examples first, force a user-confirmed
-motivation, design the paper row by row, and only then write or rebuild the
-manuscript.
+learn the target scene and strong examples first, preserve a traceable
+author-confirmed motivation, design the paper row by row, and only then write
+or rebuild the manuscript. If the current conversation or a traceable run
+record already contains the author's explicit motivation choice, and current
+research has not materially changed its scope or meaning, record that choice
+in `confirmed_motivation.md` and run the owning gate instead of asking again.
+`user_motivation` in the intake config is context, not approval. If no
+traceable author choice exists, stop at the motivation gate.
 
 Never fabricate data, metrics, p-values, datasets, citations, figures, or
 experimental claims. User materials are authoritative for this paper's results.
@@ -77,6 +82,10 @@ but it supports the contribution rather than replacing it.
    challenge makes it necessary, what evidence validates it, what claim boundary
    to respect, why a reviewer should find it publishable). Template + per-section
    checklists: `references/contribution.md`. Gate: `contribution_check.py`.
+   An existing `confirmed_contribution.md` may be reused only when it records the
+   user's explicit confirmation, its source and scope are identifiable, and it
+   still matches the current configuration and materials. Otherwise, return to
+   the contribution decision instead of silently reusing or inventing one.
 2. **Results-as-Validation.** Each major Results subsection must validate at least
    one contribution promise; metric-only units with no contribution mapping are a
    failure. Record this in `results_validation.md`. Template:
@@ -149,8 +158,11 @@ or the output directory is empty.
 
 **Anti-skip rule:** Each stage is a gate. After completing a stage, run its
 gate check before moving to the next. If the gate fails, route back to that
-stage — do not skip, do not hand-write the missing artifact, do not patch
-downstream. The gate script is `progress_check.py --gate <stage_name>`.
+stage — do not skip, fabricate, or hand-write a placeholder artifact, and do not
+patch downstream. The only human-gate exception is to faithfully record an
+explicit, traceable author decision in the artifact that owns that decision,
+then run its gate as described in Stage 4 and `references/resume.md`. The gate
+script is `progress_check.py --gate <stage_name>`.
 Never use bulk placeholder generators such as `generate_artifacts.py`,
 `quick_generate.py`, or `mock_artifacts.py` to replace real stage work.
 
@@ -172,12 +184,20 @@ not ask the user to hand-write JSON or answer a long plain chat checklist when a
 terminal is available. In Claude Code, `/paperspine` is the preferred entry: it launches
 the external intake window automatically when configuration is missing.
 
-**Codex hard constraint (do not skip):** when
-`paper_rewriting_output/paper_spine_config.json` is missing, the FIRST tool
-action after reading this skill MUST be to run the absolute
-`launch_paperspine_ui.ps1` (resolve under `~/.codex/skills/...` or
-`~/.claude/skills/...`) with `sandbox_permissions: require_escalated` so the
-window can open.
+**Host-compatible intake:** follow the resume-first rule and inspect existing
+configuration, progress and launcher availability before opening intake. Resolve
+the absolute installed `launch_paperspine_ui.ps1` under `~/.codex/skills/...` or
+`~/.claude/skills/...` (or the installed shell equivalent). Use only parameters
+and permissions supported by the current host; this skill does not require
+elevation or require launcher execution to precede inspection. Do not change host
+permission settings to launch it. If the launcher is unavailable or blocked,
+report the specific missing capability and the remaining intake fields, retain
+the resume state, and use an available intake path within existing authority.
+Configuration-dependent stages remain blocked until their intake gate passes.
+Read-only inventory and preparation that do not depend on missing configuration
+may continue. The Motivation Confirmation and other human approval gates remain
+unchanged; an existing approval is reusable only with a traceable source and
+unchanged scope.
 
 **Gate:**
 ```bash
@@ -215,11 +235,21 @@ If FAILED: return to citation. The bank must exist with sufficient candidates.
 
 ### Stage 4 — Motivation Confirmation
 
-Stop for user confirmation of the controlling motivation. Write
-`confirmed_motivation.md` only after the user chooses.
+This is a human-decision gate, not a duplicate-artifact gate. First check the
+current conversation and traceable run records. If they contain an explicit
+author choice of the same motivation, and current research has not materially
+changed its scope or meaning, faithfully record that choice and its source in
+`confirmed_motivation.md`, then run the gate. Recording a directly evidenced
+choice is the stage operation; it is not a placeholder and must not invent or
+infer approval. The initial `user_motivation` config field alone is not
+confirmation. An existing `confirmed_motivation.md` may likewise be reused
+only after its source and target scope still match.
 
-This stage is BLOCKED (not just pending) until the user confirms. Present
-`motivation_options_after_research.md` and wait. Do not auto-select.
+If no such choice exists, this stage is BLOCKED (not just pending): present
+`motivation_options_after_research.md` and wait for the author to choose,
+revise, or write a motivation. Do not auto-select. A materially changed
+research scope or meaning requires a fresh author decision even when an older
+confirmation exists.
 
 **Gate:**
 ```bash

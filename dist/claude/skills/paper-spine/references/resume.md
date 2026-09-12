@@ -4,6 +4,16 @@ PaperSpine supports resuming from the first incomplete stage when a prior run
 was interrupted.  Do **not** restart from scratch unless the user explicitly
 asks for a clean run.
 
+A missing artifact means that the required record is absent; it does not by
+itself prove that a human decision never occurred. For a human-gated artifact,
+check the current conversation and traceable run records before asking again.
+When an explicit author decision for the same option is present and current
+research has not materially changed its scope or meaning, faithfully record
+that decision and its source in the owning artifact, then run the owning gate.
+This is the stage's recording operation, not placeholder generation. Never
+invent, infer, or upgrade an approval, and do not treat the initial
+`user_motivation` config field as confirmation.
+
 ## Anti-Skip Rule
 
 **No stage may be skipped.** When a stage's artifacts are missing, that stage
@@ -16,8 +26,10 @@ MUST be executed before any later stage. Do not:
   any bulk script to create placeholder intermediate files instead of running
   the real research, citation, planning, writing, or audit stage
 
-A missing artifact means the stage that should have produced it was not run.
-Run that stage. This is non-negotiable.
+For ordinary stage artifacts, a missing artifact means the stage that should
+have produced it was not run. Run that stage. For a human-gated artifact, the
+evidenced-decision rule above is the only exception: record the real decision
+with its source, then run the gate. This is non-negotiable.
 
 ## Resume Loop
 
@@ -45,9 +57,14 @@ Do not stop after fixing one missing stage unless:
    next stage.
 
 3. **If `next_stage` is `motivation_confirmation` and status is `BLOCKED`:**
-   stop and present the existing `motivation_options_after_research.md` to the
-   user.  Do not rewrite the motivation options.  Wait for explicit user
-   confirmation before writing `confirmed_motivation.md`.
+   inspect the current conversation and traceable run records for an explicit
+   author choice of the same motivation. If one exists and current research
+   has not materially changed its scope or meaning, record that choice and its
+   source in `confirmed_motivation.md`, then run the motivation gate; do not
+   ask the author to repeat it. If no such choice exists, stop and present the
+   existing `motivation_options_after_research.md`. Do not rewrite the options
+   or auto-select. Wait for the author to choose, revise, or write a motivation.
+   A materially changed research scope or meaning requires a fresh decision.
 
 4. **For any other `next_stage`**, read the corresponding `references/*.md`
    playbook and execute that stage.  Do not re-run earlier stages whose

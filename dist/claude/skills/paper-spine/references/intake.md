@@ -53,8 +53,14 @@ Collect workflow options and write validated configuration before any substantiv
 
 - The supported interactive path is the bundled terminal wizard (`intake_wizard.py`).
 - In Claude Code, `/paperspine` launches the intake UI automatically when config is missing.
-- In Codex, use the absolute path to `launch_paperspine_ui.ps1` with escalated permissions.
-- Fallback: numbered menus; chat-based questions only when terminal execution is impossible.
+- In Codex, resolve the absolute installed path to `launch_paperspine_ui.ps1` and
+  use only parameters supported by the current host; no elevation or first-action
+  requirement is part of this skill.
+- Inspect existing configuration and progress before opening the UI. If the UI is
+  unavailable, use numbered menus or concise chat questions for only the missing
+  fields; read-only preparation that does not depend on configuration may continue.
+- A valid existing configuration and approval record may be reused when its source
+  and scope still match the current run. Do not treat a UI timeout as approval.
 - Never require the user to hand-write JSON.
 
 ## Scripts

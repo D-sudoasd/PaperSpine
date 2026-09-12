@@ -256,7 +256,7 @@ class AdapterLauncherTests(unittest.TestCase):
             r".codex\skills\paper-spine\scripts\launch_paperspine_ui.ps1", text
         )
         self.assertIn("$HOME/.codex/skills/paper-spine/scripts/launch_paperspine_ui.sh", text)
-        self.assertIn("-File $launcher", text)
+        self.assertIn("-File $paperSpineLauncher", text)
         self.assertNotRegex(text, r"-File\s+[\"']?\.?[\\/]?scripts[\\/]")
         # Explicitly documents resolving by absolute path because scripts/ is absent locally.
         self.assertIn("absolute installed path", text)
