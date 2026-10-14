@@ -14,6 +14,16 @@ PaperSpine5 是一个覆盖论文全流程的 AI Skill。你提供研究方向�
 
 从正文到数据图、机制示意图和方法框架图，在同一个任务中完成。通过 `paper-spine` 启动，在网页中选择方案、预览图文、提出修改意见并下载成果。研究材料优先保存在本地，论点、引用和图表均以真实资料与证据为依据。
 
+## 社区星图
+
+<p align="center">
+  <a href="https://wubing2023.github.io/PaperSpine/v5/community/">
+    <img src="website/assets/community-atlas-preview.png" alt="PaperSpine 公开 GitHub Stargazer 社区星图">
+  </a>
+</p>
+
+星图聚合公开 GitHub Stargazer 的自报地理位置与机构信息。它反映公开社区分布，不代表安装量、活跃用户、论文数量、产品能力或机构采用。点击图片可打开[可交互社区星图](https://wubing2023.github.io/PaperSpine/v5/community/)。
+
 ## 下载
 
 - Windows x64 套件：约 26.5 MB。

@@ -14,6 +14,16 @@ PaperSpine5 is an AI Skill that covers the whole paper workflow. You bring a res
 
 Body text, data figures, mechanism diagrams, and method frameworks are all produced inside one task. Start it with `paper-spine`, choose a plan in the web workspace, preview the text and figures, leave revision notes, and download the results. Research materials stay local by default, and every claim, citation, and figure is grounded in real sources and evidence.
 
+## Community atlas
+
+<p align="center">
+  <a href="https://wubing2023.github.io/PaperSpine/v5/community/en.html">
+    <img src="website/assets/community-atlas-preview.png" alt="PaperSpine public GitHub Stargazer community atlas">
+  </a>
+</p>
+
+The atlas aggregates self-reported locations and affiliations from public GitHub Stargazers. It shows public community distribution, not installs, active users, papers, product capabilities, or institutional adoption. Click the image to open the [interactive community atlas](https://wubing2023.github.io/PaperSpine/v5/community/en.html).
+
 ## Downloads
 
 - Windows x64 suite: about 26.5 MB.
