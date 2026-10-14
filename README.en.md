@@ -22,7 +22,7 @@ Body text, data figures, mechanism diagrams, and method frameworks are all produ
   </a>
 </p>
 
-The atlas aggregates self-reported locations and affiliations from public GitHub Stargazers. It shows public community distribution, not installs, active users, papers, product capabilities, or institutional adoption. Click the image to open the [interactive community atlas](https://wubing2023.github.io/PaperSpine/v5/community/en.html).
+The image is a preview snapshot of self-reported locations and affiliations from public GitHub Stargazers. It shows public community distribution, not installs, active users, papers, product capabilities, or institutional adoption. Click it to open the [daily-refreshed interactive community atlas](https://wubing2023.github.io/PaperSpine/v5/community/en.html).
 
 ## Downloads
 

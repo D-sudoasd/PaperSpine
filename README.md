@@ -22,7 +22,7 @@ PaperSpine5 是一个覆盖论文全流程的 AI Skill。你提供研究方向�
   </a>
 </p>
 
-星图聚合公开 GitHub Stargazer 的自报地理位置与机构信息。它反映公开社区分布，不代表安装量、活跃用户、论文数量、产品能力或机构采用。点击图片可打开[可交互社区星图](https://wubing2023.github.io/PaperSpine/v5/community/)。
+上图是公开 GitHub Stargazer 自报地理位置与机构信息的预览快照。它反映公开社区分布，不代表安装量、活跃用户、论文数量、产品能力或机构采用。点击图片可打开[每日刷新的可交互社区星图](https://wubing2023.github.io/PaperSpine/v5/community/)。
 
 ## 下载
 
