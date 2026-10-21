@@ -1,117 +1,116 @@
-# Research Stage
+# Research and supplied-evidence writing
 
-This file is the canonical stage playbook for the paper-spine orchestrator.
+The current Agent carries out this work under the one paper-spine Skill. Web
+stores the user's settings and choices; the public API records facts and exports
+readable bridge files. A research milestone is not a request to a hidden engine.
 
-## Purpose
+Read the saved `research_mode`, materials inventory/authorized roots, task
+question and any explicit offline instruction before deciding what work to do. Keep original
+inputs unchanged. Record sources actually read and results actually computed.
 
-Learn the target scene, index local references, study strong examples, map SOTA
-gaps, and either produce motivation options or verify an existing explicit
-author choice. Research must complete before accepting a new post-research
-motivation decision. An existing choice may be carried forward only when the
-current research has not materially changed its scope or meaning; record that
-choice and its source in `confirmed_motivation.md` before running the gate.
+## Discipline and venue priors
 
-## Literature Retrieval Priority Protocol
+Read the applicable `scenario-<scene>.md`. For a named venue, follow
+`target-journal-research.md` using current official requirements. For metals,
+metallurgy, alloys or Acta-class experimental work, also read
+`discipline-metals-acta.md`: use processing–structure–property reasoning,
+reproducible Experimental details, and mechanism claims bounded by the actual
+characterization. Detect this from the target venue, special requirements or
+the supplied study; `materials_dir` names user assets, not a discipline.
+Learn exemplar result narratives appropriate to the study rather than imposing
+ML ablation/leaderboard sections on experimental materials work. Frame relevant
+gaps as process windows, mechanism questions or property trade-offs. Preserve
+these priors under every research mode without running unauthorized new analysis.
 
-1. **Literature MCP tools (preferred).** If the host has MCP servers matching
-   `cnki`, `ieee`, `arxiv`, `semantic scholar`, `scholar`, `pubmed`, `crossref`,
-   `wos`, `web of science`, or `scopus`, use them first. Record the source
-   channel in `source_index.md` as `MCP-CNKI`, `MCP-IEEE`, `MCP-PubMed`, etc.
-2. **Host WebSearch / browsing tools (fallback).**
-3. **Local files (always available).**
-4. **local_first rule:** when `reference_mode=local_first` or `specified_paths`,
-   local index must be built first; MCP/web may supplement only.
-5. **MCP is an enhancement, not a dependency.** Do not error or ask the user to
-   install MCP when none is available.
+Before requesting another motivation decision, check the same task's saved
+choices and traceable author statements. Carry forward an explicit choice only
+when current research has not materially changed its scope or meaning; record
+its source through the existing task authority. A legacy flat-output run records
+that choice in `confirmed_motivation.md` before the owning gate. The initial
+`user_motivation` field alone is not confirmation.
 
-## Tier Rules
+## materials_only — supplied results, with normal literature learning
 
-- `flash`: 3 target-scene examples + 3 recent high-quality field/SOTA examples.
-- `pro`: 6 target-scene examples + 6 recent high-quality field/SOTA examples.
+Use supplied materials and existing results to develop the contribution and
+write the paper. Extract text/tables, inspect relevant PDF/DOCX pages, check
+units, provenance and internal consistency, and identify which existing result
+supports each claim. Preserve existing analysis outputs and methods as reported.
 
-## Stage 1 — Index Local References
+Do not run new EDA, inferential tests, experiments, model fitting/evaluation,
+data mining or rerun supplied scripts merely to produce reproducibility evidence.
+Rendering a supplied result as a figure is allowed; computing a new statistical
+outcome is not. Accept supplied figures and reported research without requiring
+every original array. Resolve actual contradictions specifically; missing complete
+reproduction inputs alone do not invalidate the result. Continue supported writing
+and preserve good figures; do not fabricate outcomes or impose a new dossier.
 
-Create `paper_rewriting_output/reference_materials/source_index.md`:
+Public literature learning, citation lookup, venue-format research and reference-
+figure reading remain normal capabilities in this mode. Follow
+[journal-learning.md](journal-learning.md) for the two saved reading-set counts,
+bibliography target and narrative/figure learning. Read real abstracts and
+overviews for the points they support; full-text availability is not a prerequisite
+for every citation. Honor an explicit offline instruction. Describe actual reading
+depth and do not claim independent reproduction of supplied scientific work.
 
-| Source ID | Type | Title/Name | Origin/URL/Path | Why Included | Local File/Note | Used For |
-|---|---|---|---|---|---|---|
+The normal milestone summary can say "No new data analysis; reused these results
+and learned from these papers", with genuine file locations and reading scope.
+Then request supported contribution/motivation options and draft after the
+user's choice. The configured literature counts guide actual reading, not a
+separate approval chain. There is no mandatory analysis report, three-lens dossier,
+Master attestation or Runner J4 acceptance for this route.
 
-Use `scripts/reference_inventory.py`:
-```bash
-python scripts/reference_inventory.py . --output-dir paper_rewriting_output --mode local_first
-```
+## required — perform the requested research and justified analysis
 
-## Stage 1b — Discipline / venue priors (conditional)
+Start from the authorized material inventory and read files that affect the
+claims. For tables/spreadsheets inspect column types, units, missingness,
+formula errors and provenance. For PDF/DOCX extract and visually check the
+source actually used. Define the scientific question and design before choosing
+analysis. Use the narrowest justified method, check its assumptions, report
+effect sizes and uncertainty where appropriate, and distinguish exploratory
+from confirmatory work. For modelling split before fitting, avoid leakage and
+preserve reproducible transformations, training/evaluation settings and scripts.
+Do not invent data analysis for a task whose evidence is wholly qualitative.
 
-Before or while launching specialist agents, load extra priors when they apply:
+For literature and venue research, use available literature MCP tools when
+helpful, otherwise host browsing/retrieval tools; no extra MCP installation is
+required. Public paper and reference-figure retrieval is a normal Skill capability,
+with no separate networking checkbox or repeated authorization question. An old
+profile's retired allow_network flag is not a gate for this capability. Respect
+an explicit offline request and the selected research scope. Build the local source index
+first when configured local-first; distinguish retrieval failure from no hits.
+Keep source identity, version/date, accessible location, relevant passage and
+claim context. Do not upload private materials without explicit authorization.
 
-1. **Always** read `references/scenario-<scene>.md` (e.g. `scenario-journal.md`).
-2. If `target_name` is non-empty and `scene` is `journal` (or conference with a
-   named venue), follow `references/target-journal-research.md` and write
-   `paper_rewriting_output/target_journal_research.md`. Prefer facts from
-   `official_urls` over memory.
-3. If the run is **metals / metallurgy / Acta-class experimental materials**,
-   also read `references/discipline-metals-acta.md` and apply its PSP spine,
-   Experimental checklist, and citation bias. Detect via:
-   - `target_name` matching (case-insensitive) `acta`, `materialia`,
-     `metallurg`, `scripta materialia`, or common alloy-journal names, **or**
-   - `special_requirements` containing metals / metallurgy / alloy /
-     processing-structure-property / PSP, **or**
-   - user materials clearly experimental alloy PSP work.
+Use three useful research lenses proportionately: venue requirements and
+audience, strong examples' argument/structure, and prior work versus the
+proposed contribution. The Agent may handle them in one coherent pass. Follow
+the saved same-field and target-venue exemplar counts in
+[journal-learning.md](journal-learning.md); depth beyond those preferences
+depends on the actual question and evidence gaps.
+Never turn an exemplar's stylistic preference into a mandatory scientific rule.
+Unknown submission facts need not prevent a supported local manuscript.
 
-Do not invent Elsevier page limits or highlight character counts; record only
-what official pages show.
+## agent_decide
 
-## Stage 2 — Three Parallel Specialist Sub-Agents
+Read the question, inventory and constraints, then explain whether new local
+analysis will materially answer a gap. Normal literature learning remains part
+of writing under all research modes. Choose the relevant
+work above, including neither when existing results suffice. Record that reason
+in the ordinary milestone summary. A saved refusal or explicit user instruction
+takes precedence over Agent discretion. The choice persists through revision
+until the user changes it or the permitted decision basis changes.
 
-Launch all three simultaneously. Each agent gets only its own context.
+## Evidence handoff to writing and figures
 
-### Agent A: Scene Analyst → `research_dossier.md`
+Keep a compact source/result → claim → figure mapping alongside the real paper
+under `task.workspace_root/paper/`; use existing notes and files where possible.
+Store new analysis scripts/results there when analysis was selected. Record
+limits, sources actually inspected and the work still needed through
+`paperspine_commit_milestone`; do not directly edit derived bridge JSON.
 
-Context: `scene`, `target_name`, `official_urls`, `source_index.md`, scene
-reference file, plus `discipline-metals-acta.md` / `target_journal_research`
-notes when Stage 1b applied.
-
-Sections: Venue Requirements, Review Criteria, Accepted Paper Patterns,
-Constraints for This Paper.
-
-### Agent B: Exemplar Learner → `exemplar_learning_dossier.md`
-
-Context: `tier`, `source_index.md`, scene reference path, and materials result
-types from `exemplar-learning-dossier.md` when Stage 1b materials prior applies.
-
-Sections: Exemplar Inventory table, Structural Patterns, Rhetorical Patterns,
-Language Patterns. Fill result-narrative types appropriate to the genre
-(microstructure / processing / property for metals; benchmark / ablation for ML).
-
-### Agent C: SOTA Mapper → `sota_gap_map.md`
-
-Context: `tier`, `source_index.md`, `user_motivation` (if set; initial context,
-not confirmation).
-
-Table: Candidate Contribution | What SOTA Already Does | User Evidence | Real Gap | Claim Strength | Risk. Plus Gap Summary.
-
-For materials priors, frame gaps as process windows, mechanism disputes, or
-property trade-offs — not only accuracy leaderboards.
-
-## Stage 3 — Merge
-
-Produce `style_profile.md` and `motivation_options_after_research.md`. Before
-blocking, check the current conversation and traceable run records for an
-explicit author choice of the same motivation. If one exists and research did
-not materially change its scope or meaning, faithfully record that choice and
-its source in `confirmed_motivation.md`, then run the motivation gate. Otherwise
-stop for the author to choose, revise, or write a motivation. Do not auto-select
-or treat `user_motivation` alone as approval.
-
-## Required Outputs
-
-- `reference_materials/source_index.md`
-- `research_dossier.md`
-- `exemplar_learning_dossier.md`
-- `style_profile.md`
-- `sota_gap_map.md`
-- `motivation_options_after_research.md`
-- `confirmed_motivation.md` (after a new explicit author choice or a verified,
-  traceable existing choice)
-- `target_journal_research.md` when `target_name` is non-empty (journal/conference venue research)
+Propose supported motivation/contribution options through the public decision
+tool. After Web confirmation read the same task/choice file and continue normal
+writing and figure tools. References teach method and visual communication and
+may support attributed background, methods and mechanisms. Their empirical
+findings must never be presented as this study's results. At figure planning/creation/assembly follow
+the staged scientific reading guide in the main Skill.

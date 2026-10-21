@@ -18,7 +18,12 @@ fees, or template versions — open `official_urls` and record facts in
 Note: config field `materials_dir` means **user source-materials folder**, not
 “materials science.” Do not reinterpret it.
 
-## Must produce
+## Research and writing records
+
+For a current public task, keep these research findings and evidence mappings
+alongside the actual paper and record them through its normal milestone route.
+Do not create a parallel legacy output tree. The filenames below identify the
+corresponding records for a genuine legacy flat-output run.
 
 1. `paper_rewriting_output/target_journal_research.md` via
    `references/target-journal-research.md` when `target_name` is set.

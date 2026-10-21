@@ -1,66 +1,38 @@
 ---
 allowed-tools: Bash(powershell:*), Bash(powershell.exe:*), Bash(pwsh:*), Bash(cmd:*), Bash(bash:*), Bash(sh:*), Bash(chmod:*)
-description: Start PaperSpine with resumable, host-compatible intake
+description: Open or resume the current PaperSpine Skill workflow, or handle an explicit update request
+argument-hint: "[update check | optional paper target]"
 ---
 
-Start the PaperSpine workflow for the current project.
+Invocation arguments: `$ARGUMENTS`
 
-If `paper_rewriting_output/paper_spine_config.json` is missing or incomplete,
-route through the `paper-spine` skill, inspect the existing progress, and use a
-host-permitted intake path. A valid existing configuration may be reused. The
-bundled intake UI is optional: launch it once when the installed launcher is
-available, otherwise use the concise numbered/text fallback for the missing
-fields. Do not ask the user to hand-write JSON. If the configuration remains
-missing after the permitted intake attempt, leave the intake gate pending and
-report what is still needed; do not infer approval from a timeout or an
-unfinished UI window. Motivation, contribution, and other author gates remain
-explicit decisions.
+Read the installed `paper-spine` Skill and follow its current host workflow.
+The host Agent performs research, writing, figures and revision; Web stores the
+same task's configuration, choices and feedback and presents actual files.
 
-## Platform-specific launcher
+Inspect existing task state and host capabilities before launching intake. Use
+only supported parameters and permissions, without requiring elevation. If the
+launcher is unavailable, retain the same task and pending configuration; continue
+independent read-only preparation. Never treat a timeout as author approval.
+Reuse an explicit, traceable unchanged author decision through the same task's
+supported authority route, preserving its source and scope.
 
-### Windows
+For an explicit update or update-check request, read `references/update.md` and
+handle that request without starting paper work. On a normal paper invocation,
+follow the installed Skill's `scripts/paperspine_update.py --preflight --yes`
+once, then continue the same task. This original wrapper now selects the full
+suite channel for the actual operating system; explicit opt-out is respected.
+After upgrading, reread the installed Skill and current public tool schemas.
 
-```powershell
-$config = Join-Path (Get-Location) "paper_rewriting_output\paper_spine_config.json"
-$launcher = Join-Path $env:USERPROFILE ".claude\skills\paper-spine\scripts\launch_paperspine_ui.ps1"
-if (-not (Test-Path -LiteralPath $launcher)) {
-  throw "PaperSpine UI launcher not found at $launcher. Reinstall or resync PaperSpine."
-}
-if (-not (Test-Path -LiteralPath $config)) {
-  powershell.exe -NoProfile -ExecutionPolicy Bypass -File $launcher -OutputDir "paper_rewriting_output"
-}
-if (-not (Test-Path -LiteralPath $config)) {
-  throw "PaperSpine intake is pending. Complete the permitted UI or use the numbered/text fallback, then rerun /paperspine."
-}
-Get-Content -LiteralPath $config -Raw
-```
+For writing, formatting, review or revision, open or resume the user's existing
+public task as directed by `SKILL.md` and `references/product-v1-workflow.md`.
+Use the installed `scripts/paperspine5_web.py launch` and its `host`
+commands when public MCP tools are not exposed. Reuse the remembered or explicitly
+supplied profile; read the actual saved configuration before continuing.
 
-### macOS / Linux
-
-```bash
-CONFIG="paper_rewriting_output/paper_spine_config.json"
-LAUNCHER="$HOME/.claude/skills/paper-spine/scripts/launch_paperspine_ui.sh"
-
-if [ ! -f "$LAUNCHER" ]; then
-  echo "PaperSpine UI launcher not found at $LAUNCHER. Reinstall or resync PaperSpine." >&2
-  exit 1
-fi
-
-if [ ! -f "$CONFIG" ]; then
-  chmod +x "$LAUNCHER"
-  bash "$LAUNCHER" "paper_rewriting_output"
-fi
-
-if [ ! -f "$CONFIG" ]; then
-  echo "PaperSpine intake is pending. Complete the permitted UI or use the numbered/text fallback, then rerun /paperspine." >&2
-  exit 1
-fi
-
-cat "$CONFIG"
-```
-
-## After config is ready
-
-When the config already exists, read it directly and continue through the
-`paper-spine` orchestrator workflow without relaunching intake unless required
-fields are missing.
+A missing historical `paper_rewriting_output/paper_spine_config.json` is not a
+reason to create another task, restart intake or use a legacy Runner flow.
+Treat invocation arguments as the user's instructions or target hint, preserving
+valid existing materials, configuration, selections and versions. Continue the
+same task through actual writing, target-venue formatting, independent review,
+preview/download and requested revision.

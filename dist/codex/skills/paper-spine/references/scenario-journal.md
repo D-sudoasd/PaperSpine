@@ -18,9 +18,10 @@ Find and record:
 - cover letter expectations when relevant,
 - Highlights / graphical abstract rules when the venue uses them.
 
-When `target_name` is non-empty, also produce
-`paper_rewriting_output/target_journal_research.md` from
-`references/target-journal-research.md` (do not skip venue research).
+For a named venue, read `references/target-journal-research.md` and record its
+requirements in the same task's research milestone. A legacy flat-output run
+uses `paper_rewriting_output/target_journal_research.md`; do not create a
+parallel legacy tree for a current public task.
 
 ## Example Learning
 
@@ -74,3 +75,7 @@ Typical expectations (always verify against official_urls):
 - Mechanism language must not outrun characterization resolution (e.g. do not
   claim atomic-scale cause from coarse SEM alone).
 - Soften or cut claims listed under contribution `Claims to soften or avoid`.
+
+Learn also how the Discussion addresses prior work, alternative explanations,
+implications and limitations; how the paper closes its research arc; and how
+venue length and section proportions leave enough space for Results and Discussion.
